@@ -1,22 +1,20 @@
 package kkkzheli.antirecall.wechat.service
 
-import android.app.Notification
 import android.app.Service
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
+import kkkzheli.antirecall.wechat.util.NotificationHelper
 
-/**
- * Stub: Keep-alive service to prevent the app from being killed by the OS.
- * Author: kkkzheli
- */
 class KeepAliveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = Notification.Builder(this, "antirerecall_channel")
-            .setContentTitle("Anti Recall")
-            .setContentText("Keep alive")
+        val notification = android.app.Notification.Builder(this, NotificationHelper.CHANNEL_ID_KEEP_ALIVE)
+            .setContentTitle("防保活服务运行中")
+            .setContentText("微信消息实时捕获")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
             .build()
-        startForeground(2, notification)
+        startForeground(1, notification)
         return START_STICKY
     }
 

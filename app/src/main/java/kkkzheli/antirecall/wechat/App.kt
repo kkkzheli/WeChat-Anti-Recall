@@ -14,6 +14,8 @@ class App : Application() {
         instance = this
         database = WeChatDatabase.getInstance(this)
         repository = MessageRepository(database)
+        kkkzheli.antirecall.wechat.util.NotificationHelper.createSpecialChannel(this)
+        kkkzheli.antirecall.wechat.util.NotificationHelper.createKeepAliveChannel(this)
     }
 
     companion object {

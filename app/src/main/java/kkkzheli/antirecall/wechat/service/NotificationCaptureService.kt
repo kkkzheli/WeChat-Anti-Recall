@@ -12,6 +12,7 @@ import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.db.WeChatMessageEntity
 import kkkzheli.antirecall.wechat.model.MessageType
 import kkkzheli.antirecall.wechat.model.SpecialType
+import kkkzheli.antirecall.wechat.util.NotificationHelper
 import kkkzheli.antirecall.wechat.util.SpecialMessageDetector
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
@@ -132,7 +133,7 @@ class NotificationCaptureService : NotificationListenerService() {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
 
-            val notification = NotificationCompat.Builder(this, CHANNEL_ID_SPECIAL)
+            val notification = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID_SPECIAL)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentTitle("重要消息提醒")
                 .setContentText("$sender${if (chatName.isNotEmpty()) " ($chatName)" else ""}: $message")
@@ -148,7 +149,6 @@ class NotificationCaptureService : NotificationListenerService() {
 
     companion object {
         const val PACKAGE_NAME = "com.tencent.mm"
-        private const val CHANNEL_ID_SPECIAL = "special_messages"
     }
 
     override fun onBind(intent: Intent?): IBinder? = super.onBind(intent)
