@@ -14,12 +14,9 @@ class KeepAliveService : Service() {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // FOREGROUND_SERVICE_TYPE_DATA_SYNC = 0x00000400 (512)
-            startForeground(1, notification, 512)
-        } else {
-            startForeground(1, notification)
-        }
+        // Manifest declares foregroundServiceType="specialUse", so use two-arg form
+        // which inherits the type from manifest (compatible across all API levels)
+        startForeground(1, notification)
         return START_STICKY
     }
 
