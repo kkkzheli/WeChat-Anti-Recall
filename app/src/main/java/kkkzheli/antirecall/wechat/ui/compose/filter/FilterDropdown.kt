@@ -1,6 +1,5 @@
 package kkkzheli.antirecall.wechat.ui.compose.filter
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
-import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,34 +23,22 @@ fun FilterScreen(
     onGroupSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    var contactNames by remember { mutableStateOf<List<String>>(emptyList()) }
-    var groupNames by remember { mutableStateOf<List<String>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        viewModel.contactNames.collect { names ->
-            contactNames = names
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.groupNames.collect { names ->
-            groupNames = names
-        }
-    }
+    val contactNames by viewModel.contactNames.collectAsStateWithLifecycle()
+    val groupNames by viewModel.groupNames.collectAsStateWithLifecycle()
 
     var contactFilterText by remember { mutableStateOf("") }
     var groupFilterText by remember { mutableStateOf("") }
 
-    val filteredContacts = contactNames.filter { name -> name.contains(contactFilterText, ignoreCase = true) }
-    val filteredGroups = groupNames.filter { name -> name.contains(groupFilterText, ignoreCase = true) }
+    val filteredContacts = contactNames.filter { it.contains(contactFilterText, ignoreCase = true) }
+    val filteredGroups = groupNames.filter { it.contains(groupFilterText, ignoreCase = true) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Filter") },
+                title = { Text("筛选联系人/群聊") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
                     }
                 }
             )
@@ -64,9 +51,8 @@ fun FilterScreen(
                 .padding(16.dp)
         ) {
             // Contacts section
-            val contactsText = "Contacts (${contactNames.size})"
             Text(
-                text = contactsText,
+                text = "联系人 (${contactNames.size})",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -75,7 +61,7 @@ fun FilterScreen(
                 value = contactFilterText,
                 onValueChange = { contactFilterText = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search contacts") },
+                placeholder = { Text("搜索联系人") },
                 singleLine = true
             )
 
@@ -94,7 +80,7 @@ fun FilterScreen(
                         ) {
                             Surface(
                                 shape = androidx.compose.foundation.shape.CircleShape,
-                                color = Color.Blue
+                                color = Color(0xFF07C160)
                             ) {
                                 Box(modifier = Modifier.size(6.dp))
                             }
@@ -110,9 +96,8 @@ fun FilterScreen(
             Divider()
 
             // Groups section
-            val groupsText = "Groups (${groupNames.size})"
             Text(
-                text = groupsText,
+                text = "群聊 (${groupNames.size})",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -121,7 +106,7 @@ fun FilterScreen(
                 value = groupFilterText,
                 onValueChange = { groupFilterText = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search groups") },
+                placeholder = { Text("搜索群聊") },
                 singleLine = true
             )
 

@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.repository.MessageRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -15,11 +17,11 @@ class MainViewModel(
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<Message>> = _messages
 
-    private val _contactNames = MutableLiveData<List<String>>()
-    val contactNames: LiveData<List<String>> = _contactNames
+    private val _contactNames = MutableStateFlow<List<String>>(emptyList())
+    val contactNames: StateFlow<List<String>> = _contactNames
 
-    private val _groupNames = MutableLiveData<List<String>>()
-    val groupNames: LiveData<List<String>> = _groupNames
+    private val _groupNames = MutableStateFlow<List<String>>(emptyList())
+    val groupNames: StateFlow<List<String>> = _groupNames
 
     private val _messageCount = MutableLiveData(0)
     val messageCount: LiveData<Int> = _messageCount
@@ -86,8 +88,8 @@ class MainViewModel(
     }
 
     fun getMessages(): List<Message> = _messages.value.orEmpty()
-    fun getContactNames(): List<String> = _contactNames.value.orEmpty()
-    fun getGroupNames(): List<String> = _groupNames.value.orEmpty()
+    fun getContactNames(): List<String> = _contactNames.value
+    fun getGroupNames(): List<String> = _groupNames.value
 
     companion object {
         const val GITHUB_REPO = "https://github.com/kkkzheli/WeChat-Anti-Recall"

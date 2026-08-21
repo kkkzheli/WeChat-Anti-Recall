@@ -1,12 +1,12 @@
 package kkkzheli.antirecall.wechat.service
 
-import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.db.WeChatMessageEntity
@@ -25,24 +25,23 @@ class NotificationCaptureService : NotificationListenerService() {
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     private val specialDetector = SpecialMessageDetector()
 
-    @Suppress("DEPRECATION")
-    override fun onNotificationPosted(sn: Notification?, tag: String?, key: String?, notification: Notification?) {
-        if (notification == null) return
-        if (notification.packageName != PACKAGE_NAME) return
+    override fun onNotificationPosted(sbn: StatusBarNotification?, record: RankingMap?) {
+        val notification = sbn?.notification ?: return
+        if (sbn.packageName != PACKAGE_NAME) return
 
         scope.launch {
-            captureAndSave(notification)
+            captureAndSave(notification, sbn.packageName)
         }
     }
-    @Suppress("DEPRECATION")
-    override fun onNotificationRemoved(sn: Notification?, tag: String?, key: String?, notification: Notification?) {
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification?, record: RankingMap?, reason: Int) {
         // Message recalled - already captured in onNotificationPosted
     }
 
-    private suspend fun captureAndSave(notification: Notification) {
+    private suspend fun captureAndSave(notification: android.app.Notification, packageName: String) {
         val extras = notification.extras ?: return
-        val contentText = extras.getString(Notification.EXTRA_TEXT).orEmpty()
-        val contentTitle = extras.getString(Notification.EXTRA_TITLE).orEmpty()
+        val contentText = extras.getString(android.app.Notification.EXTRA_TEXT).orEmpty()
+        val contentTitle = extras.getString(android.app.Notification.EXTRA_TITLE).orEmpty()
 
         if (contentText.isEmpty() && contentTitle.isEmpty()) return
 
@@ -103,7 +102,7 @@ class NotificationCaptureService : NotificationListenerService() {
             if (colonIndex > 0 && colonIndex < 15) {
                 firstLine.substring(0, colonIndex).trim()
             } else {
-                val spaceIndex = firstLine.indexOf(' ')
+                val spaceIndex = firstLine.indexOf('、')
                 if (spaceIndex > 3 && spaceIndex < 15) {
                     firstLine.substring(0, spaceIndex).trim()
                 } else {
@@ -117,9 +116,11 @@ class NotificationCaptureService : NotificationListenerService() {
 
     private fun detectMessageType(text: String): MessageType {
         val lower = text.lowercase()
-        if (lower.contains("voice") || lower.contains("语音")) return MessageType.VOICE
-        if (lower.contains("image") || lower.contains("图片")) return MessageType.IMAGE
-        if (lower.contains("video") || lower.contains("视频")) return MessageType.VIDEO
+        if (lower.contains("voice") || lower.contains("voice call")) return MessageType.VOICE_CALL
+        if (lower.contains("video") || lower.contains("video call")) return MessageType.VIDEO_CALL
+        if (lower.contains("语音") && !lower.contains("音频通话")) return MessageType.VOICE
+        if (lower.contains("图片") || lower.contains("照片")) return MessageType.IMAGE
+        if (lower.contains("视频")) return MessageType.VIDEO
         if (lower.contains("location") || lower.contains("位置")) return MessageType.LOCATION
         if (lower.contains("file") || lower.contains("文件")) return MessageType.FILE
         if (lower.contains("http://") || lower.contains("https://")) return MessageType.LINK
@@ -133,7 +134,7 @@ class NotificationCaptureService : NotificationListenerService() {
 
             val notification = NotificationCompat.Builder(this, CHANNEL_ID_SPECIAL)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle("Important Message")
+                .setContentTitle("重要消息提醒")
                 .setContentText("$sender${if (chatName.isNotEmpty()) " ($chatName)" else ""}: $message")
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setAutoCancel(true)
