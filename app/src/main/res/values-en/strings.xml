@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anti Recall</string>
+    <string name="notification_channel_special">Important Message Alerts</string>
+    <string name="notification_channel_normal">Message History</string>
+    <string name="notification_content_special">Important Message Alerts</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_github">GitHub Project</string>
+    <string name="settings_author">Author</string>
+    <string name="settings_clear_all">Clear All Records</string>
+    <string name="settings_permission_status">Permission Status</string>
+    <string name="settings_notification_permission">Notification Permission</string>
+    <string name="settings_granted">Granted</string>
+    <string name="settings_not_granted">Not Granted</string>
+    <string name="main_empty">No message records yet.\nPlease ensure Anti Recall has notification access.</string>
+    <string name="main_total_messages">%d messages captured</string>
+    <string name="filter_title">Filter</string>
+    <string name="filter_contacts">Contacts</string>
+    <string name="filter_groups">Group Chats</string>
+    <string name="search_hint">Search messages, contacts, time...</string>
+    <string name="search_empty">No matching messages found</string>
+    <string name="message_date_format">YY-MM-DD</string>
+    <string name="message_time_format">HH:MM:SS</string>
+    <string name="special_voice_call">Voice Call</string>
+    <string name="special_video_call">Video Call</string>
+    <string name="special_transfer">Transfer</string>
+    <string name="special_red_packet">Red Packet</string>
+    <string name="dialog_clear_title">Confirm Clear</string>
+    <string name="dialog_clear_message">Are you sure you want to clear all message records? This action cannot be undone.</string>
+    <string name="dialog_clear_ok">Confirm</string>
+    <string name="dialog_clear_cancel">Cancel</string>
+    <string name="permission_needs_title">Notification Permission Required</string>
+    <string name="permission_needs_message">Anti Recall needs notification access to capture WeChat messages. Please enable it in system settings.</string>
+    <string name="permission_needs_open_settings">Go to Settings</string>
+    <string name="keep_alive_title">Anti Recall Running</string>
+    <string name="keep_alive_content">Anti-recall service is running, please do not close.</string>
+</resources>

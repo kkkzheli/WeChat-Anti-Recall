@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wechat_green">#FF07C160</color>
+    <color name="wechat_dark_green">#FF06AD56</color>
+    <color name="special_red">#FFF44336</color>
+    <color name="special_orange">#FFFF9800</color>
+    <color name="group_blue">#FF2196F3</color>
+    <color name="person_gray">#FF757575</color>
+    <color name="date_gray">#FF9E9E9E</color>
+    <color name="background">#FFFFFFFF</color>
+    <color name="surface">#FFFFF5FE</color>
+    <color name="surface_variant">#FFEEEEEE</color>
+    <color name="card_background">#FFFFFFFF</color>
+    <color name="card_special_red">#FFFFFFDE</color>
+    <color name="card_special_orange">#FFFFF3E0</color>
+    <color name="card_group_blue">#FFE3F2FD</color>
+    <color name="card_person_normal">#FFFFFFFF</color>
+</resources>

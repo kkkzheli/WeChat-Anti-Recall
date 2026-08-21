@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anti Recall</string>
+    <string name="notification_channel_special">重要消息提醒</string>
+    <string name="notification_channel_normal">消息记录</string>
+    <string name="notification_content_special">重要消息提醒</string>
+    <string name="settings_title">设置</string>
+    <string name="settings_github">GitHub 项目</string>
+    <string name="settings_author">作者</string>
+    <string name="settings_clear_all">清空所有记录</string>
+    <string name="settings_permission_status">权限状态</string>
+    <string name="settings_notification_permission">通知权限</string>
+    <string name="settings_granted">已授予</string>
+    <string name="settings_not_granted">未授予</string>
+    <string name="main_empty">暂无消息记录\n请确保 Anti Recall 已读取通知权限</string>
+    <string name="main_total_messages">已捕获 %d 条消息</string>
+    <string name="filter_title">筛选</string>
+    <string name="filter_contacts">联系人</string>
+    <string name="filter_groups">群聊</string>
+    <string name="search_hint">搜索消息、联系人、时间...</string>
+    <string name="search_empty">未找到匹配的消息</string>
+    <string name="message_date_format">YY-MM-DD</string>
+    <string name="message_time_format">HH:MM:SS</string>
+    <string name="special_voice_call">语音通话</string>
+    <string name="special_video_call">视频通话</string>
+    <string name="special_transfer">转账</string>
+    <string name="special_red_packet">红包</string>
+    <string name="dialog_clear_title">确认清空</string>
+    <string name="dialog_clear_message">确定要清空所有消息记录吗？此操作不可撤销。</string>
+    <string name="dialog_clear_ok">确认</string>
+    <string name="dialog_clear_cancel">取消</string>
+    <string name="permission_needs_title">需要通知权限</string>
+    <string name="permission_needs_message"> Anti Recall 需要通知读取权限才能捕获微信消息。请在系统设置中开启。</string>
+    <string name="permission_needs_open_settings">去设置</string>
+    <string name="keep_alive_title">Anti Recall 运行中</string>
+    <string name="keep_alive_content">防撤回服务正在运行，请勿关闭</string>
+</resources>
