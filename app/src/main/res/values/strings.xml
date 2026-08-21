@@ -19,7 +19,7 @@
     <string name="filter_groups">群聊</string>
     <string name="search_hint">搜索消息、联系人、时间...</string>
     <string name="search_empty">未找到匹配的消息</string>
-    <string name="message_date_format">YY-MM-DD</string>
+    <string name="message_date_format">MM-dd-yyyy</string>
     <string name="message_time_format">HH:MM:SS</string>
     <string name="special_voice_call">语音通话</string>
     <string name="special_video_call">视频通话</string>
@@ -27,11 +27,11 @@
     <string name="special_red_packet">红包</string>
     <string name="dialog_clear_title">确认清空</string>
     <string name="dialog_clear_message">确定要清空所有消息记录吗？此操作不可撤销。</string>
-    <string name="dialog_clear_ok">确认</string>
+    <string name="dialog_clear_ok">清除</string>
     <string name="dialog_clear_cancel">取消</string>
     <string name="permission_needs_title">需要通知权限</string>
-    <string name="permission_needs_message"> Anti Recall 需要通知读取权限才能捕获微信消息。请在系统设置中开启。</string>
+    <string name="permission_needs_message">Anti Recall 需要通知读取权限才能捕获微信消息。请在系统设置中开启。</string>
     <string name="permission_needs_open_settings">去设置</string>
-    <string name="keep_alive_title">Anti Recall 运行中</string>
-    <string name="keep_alive_content">防撤回服务正在运行，请勿关闭</string>
+    <string name="keep_alive_title">Anti Recall 守护中</string>
+    <string name="keep_alive_content">消息持续保护中</string>
 </resources>

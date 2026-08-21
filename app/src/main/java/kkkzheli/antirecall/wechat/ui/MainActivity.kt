@@ -126,14 +126,10 @@ class MainActivity : ComponentActivity() {
         )
         if (enabled == null || !enabled.contains(componentName.flattenToString())) {
             startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            Toast.makeText(this, "请在设置中允许 Anti Recall 读取通知", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(kkkzheli.antirecall.wechat.R.string.permission_needs_message), Toast.LENGTH_LONG).show()
         } else {
             val intent = Intent(this, NotificationCaptureService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            startService(intent)
         }
     }
 

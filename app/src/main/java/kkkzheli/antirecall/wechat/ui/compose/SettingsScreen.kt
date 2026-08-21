@@ -2,7 +2,9 @@ package kkkzheli.antirecall.wechat.ui.compose
 
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,10 +43,15 @@ fun SettingsScreen(
     val context = LocalContext.current
     var showClearDialog by remember { mutableStateOf(false) }
 
+    val notificationEnabled by lazy {
+        val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+        enabled != null && enabled.contains("${context.packageName}/kkkzheli.antirecall.wechat.service.NotificationCaptureService")
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
+                title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")
@@ -54,30 +63,30 @@ fun SettingsScreen(
         Column(
             modifier = modifier.fillMaxSize().padding(paddingValues).verticalScroll(rememberScrollState()).padding(16.dp),
         ) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF24292E), modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text(text = "GitHub 项目", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = MainViewModel.AUTHOR_NAME + "/WeChat-Anti-Recall", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
+                            Text(text = "GitHub Project", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = "${MainViewModel.AUTHOR_NAME}/WeChat-Anti-Recall", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedButton(onClick = { openUrl(context, MainViewModel.GITHUB_REPO) }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("在浏览器中打开")
+                        Text("Open in browser")
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "作者", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(text = "Author", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -95,60 +104,60 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text(text = "版本信息", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = MainViewModel.APP_NAME + " v1.0.0", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "Version", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = "Anti Recall v1.0.0", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "基于 Material Design 3 / Jetpack Compose\nTarget API 34 · minSdk 23", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    Text(text = "Based on Material Design 3 / Jetpack Compose\nTarget API 34 · minSdk 23", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Permissions section
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "权限状态", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    Text(text = "Permission Status", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
 
-                    val npd: Boolean? = (viewModel as @UnsafeVariance Any).javaClass.declaredFields.firstOrNull { it.name == "_notificationPermissionDenied" || it.name == "notificationPermissionDenied" }?.get(viewModel) as? Boolean
-                    PermissionStatusRow(
-                        icon = Icons.Default.Info,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        title = "通知权限",
-                        status = "已授权",
-                        statusColor = Color(0xFF07C160),
+                    PermissionCardRow(
+                        icon = Icons.Default.NotificationsActive,
+                        title = "Notification Permission",
+                        status = if (notificationEnabled) "Granted" else "Not Granted",
+                        isEnabled = notificationEnabled,
+                        onClick = {
+                            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        },
                     )
 
-                    Divider(modifier = Modifier.padding(horizontal = 0.dp, vertical = 8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    PermissionStatusRow(
-                        icon = Icons.Default.Info,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        title = "悬浮窗权限",
-                        status = "已授权",
-                        statusColor = Color(0xFF07C160),
+                    PermissionCardRow(
+                        icon = Icons.Default.PhoneAndroid,
+                        title = "Floating Window",
+                        status = "Granted",
+                        isEnabled = true,
+                        onClick = {},
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
+            FilledTonalIconButton(
                 onClick = { showClearDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF4444)),
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Icon(Icons.Default.ClearAll, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("清除所有消息")
+                Text("Clear All Messages")
             }
         }
     }
@@ -156,27 +165,53 @@ fun SettingsScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF4444)) },
-            title = { Text("确认清除") },
-            text = { Text("此操作将删除所有已捕获的消息，且无法恢复。确定要继续吗？") },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Confirm Clear") },
+            text = { Text("This will delete all captured messages and cannot be undone. Continue?") },
             confirmButton = {
                 TextButton(onClick = { onClearConfirmed(); showClearDialog = false }) {
-                    Text("清除", color = Color(0xFFFF4444))
+                    Text("Clear", color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { showClearDialog = false }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { showClearDialog = false }) { Text("Cancel") } },
         )
     }
 }
 
 @Composable
-private fun PermissionStatusRow(icon: androidx.compose.ui.graphics.vector.ImageVector, iconTint: Color, title: String, status: String, statusColor: Color) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(text = title, fontSize = 14.sp)
-        Spacer(modifier = Modifier.weight(1f))
-        Text(text = status, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = statusColor)
+private fun PermissionCardRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, status: String, isEnabled: Boolean, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, tint = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(text = title, fontSize = 14.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            CapsuleBadge(text = status, isError = !isEnabled)
+        }
+    }
+}
+
+@Composable
+private fun CapsuleBadge(text: String, isError: Boolean = false) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = text,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+        )
     }
 }
 

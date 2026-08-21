@@ -6,11 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
@@ -44,15 +47,15 @@ fun MessageCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = { onClick(message) })
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-            .then(if (showGroupBorder) Modifier.border(width = 3.dp, color = cardColors.groupAccent, shape = RoundedCornerShape(8.dp)) else Modifier),
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .then(if (showGroupBorder) Modifier.border(width = 3.dp, color = cardColors.groupAccent, shape = RoundedCornerShape(16.dp)) else Modifier),
         colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 8.dp),
+                .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Timestamp column (left)
@@ -62,32 +65,47 @@ fun MessageCard(
             ) {
                 Text(
                     text = message.displayDate.ifEmpty { "--" },
-                    fontSize = 10.sp,
-                    color = cardColors.timestampColor,
-                    lineHeight = 12.sp,
+                    fontSize = 11.sp,
+                    color = cardColors.timestampColor.copy(alpha = 0.8f),
+                    lineHeight = 14.sp,
                 )
                 Text(
                     text = message.displayTime.ifEmpty { "--" },
-                    fontSize = 10.sp,
-                    color = cardColors.timestampColor,
-                    lineHeight = 12.sp,
+                    fontSize = 11.sp,
+                    color = cardColors.timestampColor.copy(alpha = 0.8f),
+                    lineHeight = 14.sp,
                 )
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Right side: sender + content
             Column(
                 modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    text = message.senderName,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = cardColors.senderColor,
-                    maxLines = 1,
-                    modifier = Modifier.padding(bottom = 2.dp),
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (message.isGroup) {
+                        Row(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .background(cardColors.groupAccent, RoundedCornerShape(4.dp)),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Text(text = "群", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = message.senderName,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = cardColors.senderColor,
+                        maxLines = 1,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Row(verticalAlignment = Alignment.Top) {
                     // Special icon
@@ -105,9 +123,10 @@ fun MessageCard(
 
                     Text(
                         text = message.content,
-                        fontSize = 13.sp,
-                        color = cardColors.contentColor,
-                        maxLines = if (message.isSpecial) 2 else 4,
+                        fontSize = 14.sp,
+                        color = cardColors.contentColor.copy(alpha = 0.92f),
+                        maxLines = if (message.isSpecial) 3 else 5,
+                        lineHeight = 18.sp,
                         modifier = Modifier.weight(1f),
                     )
                 }

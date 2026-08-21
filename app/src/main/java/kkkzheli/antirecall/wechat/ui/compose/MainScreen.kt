@@ -5,14 +5,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kkkzheli.antirecall.wechat.model.Message
@@ -48,11 +47,6 @@ fun MainScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Anti Recall") },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    }
-                },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "搜索")
@@ -67,9 +61,6 @@ fun MainScreen(
                             }
                         }
                     }
-                    DropdownMenu(expanded = false, onDismissRequest = {}) {
-                        DropdownMenuItem(text = { Text("设置") }, onClick = onNavigateToSettings, leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) })
-                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "设置")
                     }
@@ -80,7 +71,7 @@ fun MainScreen(
         if (messages.isEmpty()) {
             Box(modifier = modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(imageVector = Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.outlineVariant)
+                    Icon(imageVector = Icons.Default.NotificationsNone, contentDescription = null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = "暂无消息", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -91,7 +82,7 @@ fun MainScreen(
             LazyColumn(
                 modifier = modifier.fillMaxSize().padding(paddingValues),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 items(messages, key = { it.id }) { message ->
                     MessageCard(message = message)

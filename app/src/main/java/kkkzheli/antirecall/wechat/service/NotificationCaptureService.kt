@@ -97,7 +97,7 @@ class NotificationCaptureService : NotificationListenerService() {
 
     private fun extractSender(title: String, text: String): String {
         val lines = text.lineSequence().take(3).filter { it.isNotBlank() }.toList()
-        return if (lines.isNotEmpty()) {
+        val rawName = if (lines.isNotEmpty()) {
             val firstLine = lines.first()
             val colonIndex = firstLine.indexOf(':')
             if (colonIndex > 0 && colonIndex < 15) {
@@ -113,6 +113,8 @@ class NotificationCaptureService : NotificationListenerService() {
         } else {
             title.trim()
         }
+        // Strip "[N]" message count prefix (e.g. "[5]张三" → "张三")
+        return rawName.replace(Regex("^\\[\\d+\\][\\s:]*(?!\\d)"), "").trim()
     }
 
     private fun detectMessageType(text: String): MessageType {
@@ -135,7 +137,7 @@ class NotificationCaptureService : NotificationListenerService() {
 
             val notification = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID_SPECIAL)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle("重要消息提醒")
+                .setContentTitle(getString(kkkzheli.antirecall.wechat.R.string.notification_channel_special))
                 .setContentText("$sender${if (chatName.isNotEmpty()) " ($chatName)" else ""}: $message")
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setAutoCancel(true)

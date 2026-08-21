@@ -14,10 +14,10 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID_SPECIAL,
-            "重要消息提醒",
+            context.getString(kkkzheli.antirecall.wechat.R.string.notification_channel_special),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "微信转账、红包等重要消息实时提醒"
+            description = context.getString(kkkzheli.antirecall.wechat.R.string.notification_content_special)
         }
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
@@ -27,10 +27,10 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID_KEEP_ALIVE,
-            "防保活服务",
+            context.getString(kkkzheli.antirecall.wechat.R.string.keep_alive_title),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Anti Recall 保活服务运行中"
+            description = context.getString(kkkzheli.antirecall.wechat.R.string.keep_alive_content)
         }
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)

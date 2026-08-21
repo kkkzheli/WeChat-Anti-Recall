@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -12,8 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Typography as MaterialTypography
 
 // -- Primary / WeChat-like palette --
 
@@ -66,12 +70,32 @@ val DarkGroupBlue = Color(0xFF1A5287)
 // -- Typography helpers (used by MessageCard) --
 
 object AntiRecallTypography {
-    val Timestamp: TextUnit = 11.sp
-    val SenderName: TextUnit = 14.sp
-    val MessageContent: TextUnit = 14.sp
-    val SectionTitle: TextUnit = 16.sp
-    val BadgeText: TextUnit = 12.sp
+    val Timestamp: Float = 11f
+    val SenderName: Float = 14f
+    val MessageContent: Float = 14f
+    val SectionTitle: Float = 16f
+    val BadgeText: Float = 12f
 }
+
+// -- Typography --
+
+private val AntiRecallTypographyDefault = Typography(
+    displayLarge = TextStyle(fontWeight = FontWeight.W400, fontSize = 57.sp),
+    displayMedium = TextStyle(fontWeight = FontWeight.W400, fontSize = 45.sp),
+    displaySmall = TextStyle(fontWeight = FontWeight.W400, fontSize = 36.sp),
+    headlineLarge = TextStyle(fontWeight = FontWeight.W400, fontSize = 32.sp),
+    headlineMedium = TextStyle(fontWeight = FontWeight.W400, fontSize = 28.sp),
+    headlineSmall = TextStyle(fontWeight = FontWeight.W400, fontSize = 24.sp),
+    titleLarge = TextStyle(fontWeight = FontWeight.W500, fontSize = 22.sp),
+    titleMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 16.sp),
+    titleSmall = TextStyle(fontWeight = FontWeight.Medium, fontSize = 14.sp),
+    bodyLarge = TextStyle(fontWeight = FontWeight.W400, fontSize = 16.sp),
+    bodyMedium = TextStyle(fontWeight = FontWeight.W400, fontSize = 14.sp),
+    bodySmall = TextStyle(fontWeight = FontWeight.W400, fontSize = 12.sp),
+    labelLarge = TextStyle(fontWeight = FontWeight.Medium, fontSize = 14.sp),
+    labelMedium = TextStyle(fontWeight = FontWeight.Medium, fontSize = 12.sp),
+    labelSmall = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.sp),
+)
 
 // -- Color schemes --
 
@@ -156,5 +180,3 @@ fun WeChatAntiRecallTheme(
         content = content
     )
 }
-
-internal val AntiRecallTypographyDefault = androidx.compose.material3.Typography()
