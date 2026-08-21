@@ -9,9 +9,11 @@ data class Message(
     val senderName: String = "",
     val chatName: String = "",
     val content: String = "",
+    val messageType: MessageType = MessageType.TEXT,
+    val timestamp: Long = 0,
     val displayDate: String = "",
     val displayTime: String = "",
-    val timestamp: Long = 0,
     val isSpecial: Boolean = false,
     val specialType: SpecialType? = null,
+    val isGroup: Boolean = false
 )

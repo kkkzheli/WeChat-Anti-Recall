@@ -1,35 +1,50 @@
 package kkkzheli.antirecall.wechat.repository
 
-import kkkzheli.antirecall.wechat.db.MessageStore
+import kkkzheli.antirecall.wechat.db.WeChatDatabase
+import kkkzheli.antirecall.wechat.db.WeChatMessageEntity
 import kkkzheli.antirecall.wechat.model.Message
+import kkkzheli.antirecall.wechat.model.MessageType
+import kkkzheli.antirecall.wechat.model.SpecialType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.emptyFlow
 
-/**
- * Repository using an in-memory store (Room not compatible with Kotlin 2.0 / current AGP).
- * Author: kkkzheli
- */
-class MessageRepository(private val store: MessageStore) {
+class MessageRepository(private val database: WeChatDatabase) {
 
-    fun getAllMessages(): Flow<List<Message>> = store.messages
+    private val dao = database.messageDao()
 
-    fun searchMessages(query: String): Flow<List<Message>> = store.messages.map { messages ->
-        if (query.isBlank()) messages else messages.filter {
-            it.content.contains(query, ignoreCase = true) ||
-                it.senderName.contains(query, ignoreCase = true)
-        }
+    fun getAllMessages(): Flow<List<Message>> {
+        return dao.getAllMessages().map { entities -> entities.map { entityToMessage(it) } }
     }
 
-    fun getContactNames(): Flow<List<String>> = emptyFlow()
+    fun searchMessages(query: String): Flow<List<Message>> {
+        return dao.searchMessages(query).map { entities -> entities.map { entityToMessage(it) } }
+    }
 
-    fun getGroupNames(): Flow<List<String>> = emptyFlow()
+    fun getContactNames(): Flow<List<String>> = dao.getContactNames()
+    fun getGroupNames(): Flow<List<String>> = dao.getGroupNames()
+    fun getMessageCount(): Flow<Int> = dao.getMessageCount()
+
+    suspend fun saveMessage(entity: WeChatMessageEntity) {
+        dao.insert(entity)
+    }
 
     suspend fun clearAllMessages() {
-        store.clearAll()
+        dao.clearAll()
     }
 
-    suspend fun insertMessage(message: Message) {
-        store.insert(message)
+    private fun entityToMessage(entity: WeChatMessageEntity): Message {
+        return Message(
+            id = entity.id,
+            content = entity.content,
+            senderName = entity.senderName,
+            chatName = entity.chatName,
+            messageType = MessageType.fromString(entity.messageType),
+            timestamp = entity.timestamp,
+            displayDate = entity.displayDate,
+            displayTime = entity.displayTime,
+            isSpecial = entity.isSpecial,
+            specialType = entity.specialType?.let { SpecialType.fromString(it) },
+            isGroup = entity.isGroup
+        )
     }
 }
