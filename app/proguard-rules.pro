@@ -1,0 +1,4 @@
+-keep class kkkzheli.antirecall.wechat.** { *; }
+-keep class androidx.room.** { *; }
+-dontwarn androidx.room.paging.**
+-keepattributes *Annotation*

@@ -1,15 +1,22 @@
 package kkkzheli.antirecall.wechat.ui.compose.message
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.LocalMall
 import androidx.compose.material.icons.filled.Money
-import androidx.compose.material.icons.filled.SignalCellular0Bar
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,11 +25,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.isSystemInDarkTheme
 import kkkzheli.antirecall.wechat.model.Message
-import kkkzheli.antirecall.wechat.model.MessageType
 import kkkzheli.antirecall.wechat.model.SpecialType
 import kkkzheli.antirecall.wechat.ui.theme.*
-import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
 @Composable
 fun MessageCard(
@@ -30,21 +36,18 @@ fun MessageCard(
     onClick: (Message) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val cardColors = resolveMessageCardColors(message)
+    val isDark = isSystemInDarkTheme()
+    val cardColors = resolveMessageCardColors(message, isDark)
     val showGroupBorder = message.chatName.isNotEmpty() && message.senderName != message.chatName
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = { onClick(message) })
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .then(if (showGroupBorder) Modifier.border(width = 3.dp, color = cardColors.groupAccent, shape = RoundedCornerShape(8.dp)) else Modifier),
         colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
         shape = RoundedCornerShape(8.dp),
-        border = if (showGroupBorder) {
-            BorderStroke(3.dp, cardColors.groupAccent)
-        } else {
-            null
-        },
     ) {
         Row(
             modifier = Modifier
@@ -114,8 +117,7 @@ fun MessageCard(
 }
 
 @Composable
-private fun resolveMessageCardColors(message: Message): MessageCardColors {
-    val isDark = MaterialTheme.colorScheme.isLight.not()
+private fun resolveMessageCardColors(message: Message, isDark: Boolean): MessageCardColors {
     val colors = when {
         message.isSpecial -> {
             when (message.specialType) {
@@ -141,7 +143,6 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
             }
         }
         message.chatName.isNotEmpty() && message.senderName != message.chatName -> {
-            // Group message
             val bg = if (isDark) DarkAntiRecallColors.cardBackground else LightPrimaryBg
             MessageCardColors(
                 containerColor = bg,

@@ -102,7 +102,7 @@ private val DarkScheme = darkColorScheme(
 )
 
 @Immutable
-data class AntiRecalColors(
+data class AntiRecallColors(
     val specialTransfer: Color,
     val specialRedPacket: Color,
     val specialVoiceCall: Color,
@@ -113,7 +113,7 @@ data class AntiRecalColors(
     val personalBackground: Color,
 )
 
-val LightAntiRecallColors = AntiRecalColors(
+val LightAntiRecallColors = AntiRecallColors(
     specialTransfer = RedPacketRed,
     specialRedPacket = RedPacketRed,
     specialVoiceCall = OrangeCall,
@@ -124,7 +124,7 @@ val LightAntiRecallColors = AntiRecalColors(
     personalBackground = NeutralSurface,
 )
 
-val DarkAntiRecallColors = AntiRecalColors(
+val DarkAntiRecallColors = AntiRecallColors(
     specialTransfer = DarkRedPacket,
     specialRedPacket = DarkRedPacket,
     specialVoiceCall = DarkOrangeCall,

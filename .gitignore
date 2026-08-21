@@ -11,13 +11,14 @@ build/
 
 # Android
 app/build/
+!app/build/outputs/apk/
+
+# APK files (keep release APKs for release)
 *.apk
-*.apks
-*.aab
-*.keystore
-*.jks
-*.p12
-*.p8
+!AntiRecall-*.apk
+
+# Generated APKs
+app-debug.apk
 
 # Local config
 local.properties

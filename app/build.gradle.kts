@@ -2,24 +2,34 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.ksp)
-    alias(libs.plugins.room)
 }
 
 android {
     namespace = "kkkzheli.antirecall.wechat"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "kkkzheli.antirecall.wechat"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("signing-key.keystore")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = "kkkzheli123"
+                keyAlias = "antirecall"
+                keyPassword = "kkkzheli123"
+            }
         }
     }
 
@@ -31,6 +41,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = false
@@ -75,14 +86,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    // Lifecycle & ViewModel
+    // Activity & Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ksp)
-    ksp(libs.androidx.room.compiler)
+    implementation("androidx.activity:activity-compose:1.9.3")
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
