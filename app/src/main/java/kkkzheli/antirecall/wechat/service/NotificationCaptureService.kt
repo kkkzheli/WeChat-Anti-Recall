@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.db.WeChatMessageEntity
 import kkkzheli.antirecall.wechat.model.MessageType
+import kkkzheli.antirecall.wechat.model.SpecialType
 import kkkzheli.antirecall.wechat.util.SpecialMessageDetector
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
@@ -24,6 +25,7 @@ class NotificationCaptureService : NotificationListenerService() {
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     private val specialDetector = SpecialMessageDetector()
 
+    @Suppress("DEPRECATION")
     override fun onNotificationPosted(sn: Notification?, tag: String?, key: String?, notification: Notification?) {
         if (notification == null) return
         if (notification.packageName != PACKAGE_NAME) return
@@ -32,7 +34,7 @@ class NotificationCaptureService : NotificationListenerService() {
             captureAndSave(notification)
         }
     }
-
+    @Suppress("DEPRECATION")
     override fun onNotificationRemoved(sn: Notification?, tag: String?, key: String?, notification: Notification?) {
         // Message recalled - already captured in onNotificationPosted
     }
@@ -63,10 +65,10 @@ class NotificationCaptureService : NotificationListenerService() {
 
         val messageType = if (specialInfo != null) {
             when (specialInfo) {
-                SpecialMessageDetector.SpecialType.VOICE_CALL -> MessageType.VOICE_CALL
-                SpecialMessageDetector.SpecialType.VIDEO_CALL -> MessageType.VIDEO_CALL
-                SpecialMessageDetector.SpecialType.TRANSFER -> MessageType.TRANSFER
-                SpecialMessageDetector.SpecialType.RED_PACKET -> MessageType.RED_PACKET
+                SpecialType.VOICE_CALL -> MessageType.VOICE_CALL
+                SpecialType.VIDEO_CALL -> MessageType.VIDEO_CALL
+                SpecialType.TRANSFER -> MessageType.TRANSFER
+                SpecialType.RED_PACKET -> MessageType.RED_PACKET
                 else -> MessageType.TEXT
             }
         } else {
@@ -134,7 +136,6 @@ class NotificationCaptureService : NotificationListenerService() {
                 .setContentTitle("Important Message")
                 .setContentText("$sender${if (chatName.isNotEmpty()) " ($chatName)" else ""}: $message")
                 .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_ALERT)
                 .setAutoCancel(true)
                 .build()
 

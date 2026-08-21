@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel = MainViewModel(repository = App.repository)
+        viewModel = MainViewModel(repository = App.instance.repository)
 
         setContent {
             WeChatAntiRecallTheme {

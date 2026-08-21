@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
+import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,8 +24,20 @@ fun FilterScreen(
     onGroupSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val contactNames: List<String> by (viewModel.contactNames.collectAsState() ?: emptyList()).let { it }
-    val groupNames: List<String> by (viewModel.groupNames.collectAsState() ?: emptyList()).let { it }
+    var contactNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var groupNames by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        viewModel.contactNames.collect { names ->
+            contactNames = names
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.groupNames.collect { names ->
+            groupNames = names
+        }
+    }
 
     var contactFilterText by remember { mutableStateOf("") }
     var groupFilterText by remember { mutableStateOf("") }
