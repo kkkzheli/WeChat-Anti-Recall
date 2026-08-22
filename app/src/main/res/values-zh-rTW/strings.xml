@@ -34,4 +34,60 @@
     <string name="permission_needs_open_settings">前往設定</string>
     <string name="keep_alive_title">Anti Recall 運作中</string>
     <string name="keep_alive_content">訊息持續保護中</string>
+
+    <!-- Extracted from SearchScreen -->
+    <string name="search_title">搜尋訊息</string>
+    <string name="btn_clear">清除</string>
+    <string name="search_active_filter">目前篩選: %s</string>
+    <string name="search_enter_keyword">請輸入關鍵字開始搜尋</string>
+    <string name="search_no_results">未找到符合的訊息</string>
+    <string name="search_filter_dialog_title">選擇篩選條件</string>
+    <string name="filter_option_all">全部</string>
+    <string name="filter_option_all_desc">顯示所有訊息</string>
+    <string name="filter_option_contacts">聯絡人篩選</string>
+    <string name="filter_option_contacts_desc">按聯絡人過濾</string>
+    <string name="filter_option_date">日期範圍</string>
+    <string name="filter_option_date_desc">指定日期區間</string>
+
+    <!-- Extracted from MainScreen -->
+    <string name="action_search">搜尋</string>
+    <string name="action_filter">篩選</string>
+    <string name="action_settings">設定</string>
+    <string name="empty_messages">暫無訊息\n請確保 Anti Recall 已取得通知存取權限</string>
+    <string name="empty_capturing">正在捕獲微信通知訊息…</string>
+
+    <!-- Extracted from MessageCard -->
+    <string name="msg_group_badge">群組</string>
+
+    <!-- Battery optimization -->
+    <string name="settings_battery_optimization">電池優化</string>
+    <string name="settings_battery_unrestricted">不受限制</string>
+    <string name="settings_battery_restricted">受限制</string>
+    <string name="settings_battery_request">請求忽略優化</string>
+    <string name="battery_opt_info">允許 Anti Recall 在背景持續執行，避免被系統省電策略終止。</string>
+
+    <!-- Theme selector -->
+    <string name="settings_theme_mode">主題模式</string>
+    <string name="theme_follow_system">跟隨系統</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_light">淺色</string>
+
+    <!-- Service status -->
+    <string name="status_running">運作中</string>
+    <string name="status_stopped">服務已停止</string>
+    <string name="status_needs_permission">點擊開啟通知權限</string>
+
+    <!-- Delete confirmation -->
+    <string name="delete_message_title">刪除訊息</string>
+    <string name="delete_message_confirm">確定要刪除這則訊息嗎？此操作無法復原。</string>
+    <string name="delete_ok">刪除</string>
+
+    <!-- GitHub button -->
+    <string name="view_on_github">檢視原始碼</string>
+
+    <!-- NLS guide -->
+    <string name="nls_guide_title">如何開啟通知存取權限</string>
+    <string name="nls_guide_step1">1. 前往「設定 → 通知 → 應用程式通知管理」</string>
+    <string name="nls_guide_step2">2. 找到 Anti Recall 並開啟</string>
+    <string name="nls_guide_step3">3. 返回應用程式，服務將自動啟動</string>
 </resources>

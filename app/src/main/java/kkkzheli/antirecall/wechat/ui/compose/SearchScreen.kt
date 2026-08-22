@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -12,9 +12,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Observer
+import androidx.compose.ui.res.stringResource
+import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.ui.compose.message.MessageCard
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
@@ -53,10 +56,10 @@ fun SearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("搜索消息") },
+                title = { Text(stringResource(R.string.search_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
                 actions = {
@@ -66,7 +69,7 @@ fun SearchScreen(
                         leadingIcon = {
                             Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
                         },
-                        label = { Text("筛选") },
+                        label = { Text(stringResource(R.string.filter_title)) },
                         modifier = Modifier.padding(end = 4.dp),
                     )
                 },
@@ -79,12 +82,12 @@ fun SearchScreen(
             OutlinedTextField(
                 value = localQuery,
                 onValueChange = { localQuery = it },
-                placeholder = { Text("输入关键词搜索...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "搜索") },
+                placeholder = { Text(stringResource(R.string.search_hint)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (localQuery.isNotEmpty()) {
                         IconButton(onClick = { localQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "清除")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.btn_clear))
                         }
                     }
                 },
@@ -96,10 +99,10 @@ fun SearchScreen(
             if (selectedFilter != null) {
                 AssistChip(
                     onClick = {},
-                    label = { Text("当前筛选: $selectedFilter") },
+                    label = { Text(stringResource(R.string.search_active_filter, selectedFilter!!)) },
                     trailingIcon = {
                         IconButton(onClick = { selectedFilter = null }) {
-                            Icon(Icons.Default.Close, contentDescription = "清除筛选", modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.btn_clear), modifier = Modifier.size(16.dp))
                         }
                     },
                     modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
@@ -120,7 +123,7 @@ fun SearchScreen(
                         Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = if (localQuery.isEmpty()) "请输入关键词开始搜索" else "未找到匹配的消息",
+                            text = if (localQuery.isEmpty()) stringResource(R.string.search_enter_keyword) else stringResource(R.string.search_no_results),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -152,27 +155,28 @@ fun SearchScreen(
 
 @Composable
 private fun SheetContent(onFilterSelected: (String) -> Unit, onDismiss: () -> Unit) {
+    val ctx = LocalContext.current
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
-            text = "选择筛选条件",
+            text = stringResource(R.string.search_filter_dialog_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp),
         )
         val options = listOf(
-            "全部" to "显示所有消息",
-            "联系人筛选" to "按联系人过滤",
-            "日期范围" to "指定日期区间",
+            R.string.filter_option_all to R.string.filter_option_all_desc,
+            R.string.filter_option_contacts to R.string.filter_option_contacts_desc,
+            R.string.filter_option_date to R.string.filter_option_date_desc,
         )
-        options.forEach { (label, desc) ->
+        options.forEach { (labelRes, descRes) ->
             FilterChip(
                 selected = false,
-                onClick = { onFilterSelected(label) },
-                label = { Text(label) },
+                onClick = { onFilterSelected(ctx.getString(labelRes)) },
+                label = { Text(ctx.getString(labelRes)) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             )
             Text(
-                text = desc,
+                text = ctx.getString(descRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 12.dp, bottom = 12.dp),

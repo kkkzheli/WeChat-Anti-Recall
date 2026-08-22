@@ -34,4 +34,60 @@
     <string name="permission_needs_open_settings">Go to Settings</string>
     <string name="keep_alive_title">Anti Recall Running</string>
     <string name="keep_alive_content">Messages protected</string>
+
+    <!-- Extracted from SearchScreen -->
+    <string name="search_title">Search Messages</string>
+    <string name="btn_clear">Clear</string>
+    <string name="search_active_filter">Filter: %s</string>
+    <string name="search_enter_keyword">Enter keywords to search</string>
+    <string name="search_no_results">No matching messages found</string>
+    <string name="search_filter_dialog_title">Select Filter</string>
+    <string name="filter_option_all">All</string>
+    <string name="filter_option_all_desc">Show all messages</string>
+    <string name="filter_option_contacts">Contacts</string>
+    <string name="filter_option_contacts_desc">Filter by contact</string>
+    <string name="filter_option_date">Date Range</string>
+    <string name="filter_option_date_desc">Specify date range</string>
+
+    <!-- Extracted from MainScreen -->
+    <string name="action_search">Search</string>
+    <string name="action_filter">Filter</string>
+    <string name="action_settings">Settings</string>
+    <string name="empty_messages">No messages yet.\nPlease ensure Anti Recall has notification access.</string>
+    <string name="empty_capturing">Capturing WeChat notifications…</string>
+
+    <!-- Extracted from MessageCard -->
+    <string name="msg_group_badge">Group</string>
+
+    <!-- Battery optimization -->
+    <string name="settings_battery_optimization">Battery Optimization</string>
+    <string name="settings_battery_unrestricted">Unrestricted</string>
+    <string name="settings_battery_restricted">Restricted</string>
+    <string name="settings_battery_request">Request Exemption</string>
+    <string name="battery_opt_info">Allow Anti Recall to run in background without battery restrictions.</string>
+
+    <!-- Theme selector -->
+    <string name="settings_theme_mode">Theme</string>
+    <string name="theme_follow_system">System</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+
+    <!-- Service status -->
+    <string name="status_running">Running</string>
+    <string name="status_stopped">Service stopped</string>
+    <string name="status_needs_permission">Tap to enable notification access</string>
+
+    <!-- Delete confirmation -->
+    <string name="delete_message_title">Delete Message</string>
+    <string name="delete_message_confirm">Delete this message? This cannot be undone.</string>
+    <string name="delete_ok">Delete</string>
+
+    <!-- GitHub button -->
+    <string name="view_on_github">View Source</string>
+
+    <!-- NLS guide -->
+    <string name="nls_guide_title">How to Enable Notification Access</string>
+    <string name="nls_guide_step1">1. Go to Settings → Notifications → App Notification Management</string>
+    <string name="nls_guide_step2">2. Find Anti Recall and enable it</string>
+    <string name="nls_guide_step3">3. Return to app — service starts automatically</string>
 </resources>

@@ -2,6 +2,7 @@ package kkkzheli.antirecall.wechat.ui.compose.message
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,15 +12,22 @@ import androidx.compose.material.icons.filled.LocalMall
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.model.SpecialType
-import kkkzheli.antirecall.wechat.ui.theme.GreenPrimary
 import kkkzheli.antirecall.wechat.ui.theme.RedPacketRed
 import kkkzheli.antirecall.wechat.ui.theme.OrangeCall
 
@@ -27,22 +35,45 @@ import kkkzheli.antirecall.wechat.ui.theme.OrangeCall
 fun MessageCard(
     message: Message,
     onClick: (Message) -> Unit = {},
+    onLongPress: ((Message) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val cardColors = resolveMessageCardColors(message)
+    var pressed by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clickable(onClick = { onClick(message) }),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp),
     ) {
+        val clickModifier = if (onLongPress != null) {
+            Modifier.pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onClick(message) },
+                    onLongPress = { onLongPress(message) },
+                    onPress = {
+                        pressed = true
+                        try {
+                            awaitRelease()
+                        } finally {
+                            pressed = false
+                        }
+                    },
+                )
+            }
+        } else {
+            Modifier
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(onClick = { if (onLongPress == null) onClick(message) })
+                .then(clickModifier)
+                .alpha(if (pressed) 0.7f else 1f)
                 .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -74,7 +105,7 @@ fun MessageCard(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                         ) {
-                            Text(text = "群", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(R.string.msg_group_badge), fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                     }

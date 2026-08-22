@@ -33,10 +33,10 @@ class SpecialMessageDetector {
         text: String
     ): String {
         return when (specialType) {
-            SpecialType.VOICE_CALL -> "📞 ${title.ifEmpty { "语音通话" }}"
-            SpecialType.VIDEO_CALL -> "🎥 ${title.ifEmpty { "视频通话" }}"
-            SpecialType.TRANSFER -> "💰 ${title.ifEmpty { "转账" }}\n$text"
-            SpecialType.RED_PACKET -> "🧧 ${title.ifEmpty { "红包" }}\n$text"
+            SpecialType.VOICE_CALL -> "📞 ${title.ifEmpty { "Voice Call" }}"
+            SpecialType.VIDEO_CALL -> "🎥 ${title.ifEmpty { "Video Call" }}"
+            SpecialType.TRANSFER -> "💰 ${title.ifEmpty { "Transfer" }}\n$text"
+            SpecialType.RED_PACKET -> "🧧 ${title.ifEmpty { "Red Packet" }}\n$text"
         }
     }
 }

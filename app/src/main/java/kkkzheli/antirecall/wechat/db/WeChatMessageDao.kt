@@ -32,4 +32,7 @@ interface WeChatMessageDao {
 
     @Query("DELETE FROM wechat_messages")
     suspend fun clearAll()
+
+    @Query("DELETE FROM wechat_messages WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }

@@ -2,21 +2,30 @@ package kkkzheli.antirecall.wechat.ui.compose
 
 import android.content.Context
 import android.content.Intent
-import android.provider.Settings
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ClearAll
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,13 +36,20 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.R
+import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
+import kkkzheli.antirecall.wechat.ui.theme.WeChatAntiRecallTheme
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
-/**
- * Settings screen for the Anti Recall app.
- * Author: kkkzheli
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -44,19 +60,15 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var showClearDialog by remember { mutableStateOf(false) }
-
-    val notificationEnabled by lazy {
-        val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
-        enabled != null && enabled.contains("${context.packageName}/kkkzheli.antirecall.wechat.service.NotificationCaptureService")
-    }
+    val themePref by ThemePreference.readFlow().collectAsState(initial = ThemePreference.SYSTEM)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
             )
@@ -65,30 +77,43 @@ fun SettingsScreen(
         Column(
             modifier = modifier.fillMaxSize().padding(paddingValues).verticalScroll(rememberScrollState()).padding(16.dp),
         ) {
+            // Theme section
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(text = "GitHub Project", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = "${MainViewModel.AUTHOR_NAME}/WeChat-Anti-Recall", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(onClick = { openUrl(context, MainViewModel.GITHUB_REPO) }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Open in browser")
+                    Text(text = stringResource(R.string.settings_theme_mode), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    val scope = rememberCoroutineScope()
+                    ThemePickerRow(themePref) { newPref ->
+                        scope.launch { ThemePreference.write(newPref) }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // GitHub section
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Author", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(text = stringResource(R.string.settings_github), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = "${MainViewModel.AUTHOR_NAME}/WeChat-Anti-Recall", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { openUrl(context, MainViewModel.GITHUB_REPO) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                        Text(stringResource(R.string.view_on_github))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Author section
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = stringResource(R.string.settings_author), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -106,13 +131,14 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Version section
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text(text = "Version", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = stringResource(R.string.settings_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Text(text = "Anti Recall v1.0.0", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -126,13 +152,18 @@ fun SettingsScreen(
             // Permissions section
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Permission Status", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
+                    Text(text = stringResource(R.string.settings_permission_status), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
+
+                    val nlsEnabled by lazy {
+                        val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+                        enabled != null && enabled.contains("${context.packageName}/kkkzheli.antirecall.wechat.service.NotificationCaptureService")
+                    }
 
                     PermissionCardRow(
-                        icon = Icons.Default.NotificationsActive,
-                        title = "Notification Permission",
-                        status = if (notificationEnabled) "Granted" else "Not Granted",
-                        isEnabled = notificationEnabled,
+                        icon = Icons.Default.Notifications,
+                        title = stringResource(R.string.settings_notification_permission),
+                        status = if (nlsEnabled) stringResource(R.string.settings_granted) else stringResource(R.string.settings_not_granted),
+                        isEnabled = nlsEnabled,
                         onClick = {
                             context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                         },
@@ -140,10 +171,14 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    BatteryOptimizationRow(context)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     PermissionCardRow(
                         icon = Icons.Default.PhoneAndroid,
                         title = "Floating Window",
-                        status = "Granted",
+                        status = stringResource(R.string.settings_granted),
                         isEnabled = true,
                         onClick = {},
                     )
@@ -173,15 +208,91 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
             icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Confirm Clear") },
-            text = { Text("This will delete all captured messages and cannot be undone. Continue?") },
+            title = { Text(stringResource(R.string.dialog_clear_title)) },
+            text = { Text(stringResource(R.string.dialog_clear_message)) },
             confirmButton = {
                 TextButton(onClick = { onClearConfirmed(); showClearDialog = false }) {
-                    Text("Clear", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.dialog_clear_ok), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { showClearDialog = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showClearDialog = false }) { Text(stringResource(R.string.dialog_clear_cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreference) -> Unit) {
+    val scope = rememberCoroutineScope()
+    val options = listOf(
+        ThemePreference.SYSTEM to stringResource(R.string.theme_follow_system),
+        ThemePreference.DARK to stringResource(R.string.theme_dark),
+        ThemePreference.LIGHT to stringResource(R.string.theme_light),
+    )
+
+    Column {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, (pref, label) ->
+                OutlinedButton(
+                    onClick = { scope.launch { ThemePreference.write(pref) } },
+                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (pref == current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                    ),
+                ) {
+                    when (pref) {
+                        ThemePreference.SYSTEM -> Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(16.dp))
+                        ThemePreference.DARK -> Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp))
+                        ThemePreference.LIGHT -> Icon(Icons.Default.LightMode, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(label, fontSize = 11.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryOptimizationRow(context: Context) {
+    val canDrawOverlays = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        android.provider.Settings.canDrawOverlays(context)
+    } else true
+    val isIgnoringBatteryOptimizations = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        pm.isIgnoringBatteryOptimizations(context.packageName)
+    } else true
+
+    val statusText = if (isIgnoringBatteryOptimizations) stringResource(R.string.settings_battery_unrestricted) else stringResource(R.string.settings_battery_restricted)
+    val enabled = isIgnoringBatteryOptimizations
+
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable {
+            if (!enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {}
+            }
+        },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Default.PowerSettingsNew, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(text = stringResource(R.string.settings_battery_optimization), fontSize = 14.sp)
+                Text(text = stringResource(R.string.battery_opt_info), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            CapsuleBadge(text = statusText, isError = !enabled)
+        }
     }
 }
 

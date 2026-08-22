@@ -29,6 +29,7 @@ class KeepAliveService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        @Suppress("DEPRECATION")
         stopForeground(true)
     }
 

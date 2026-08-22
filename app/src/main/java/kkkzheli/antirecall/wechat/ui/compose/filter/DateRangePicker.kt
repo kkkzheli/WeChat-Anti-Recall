@@ -23,6 +23,13 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+private fun getDayAbbreviations(): List<String> {
+    return when (Locale.getDefault().language) {
+        "zh" -> listOf("日", "一", "二", "三", "四", "五", "六")
+        else -> listOf("S", "M", "T", "W", "T", "F", "S")
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerDialog(
@@ -137,12 +144,4 @@ private fun buildCalendarDays(ym: YearMonth): List<Cell> {
 
 private fun isDisabled(date: LocalDate, selected: LocalDate, minDate: LocalDate?, maxDate: LocalDate?): Boolean {
     return (minDate != null && date.isBefore(minDate)) || (maxDate != null && date.isAfter(maxDate))
-}
-
-private fun getDayAbbreviations(): List<String> {
-    return if (Locale.getDefault().language == "zh" || Locale.getDefault().displayLanguage.contains("中")) {
-        listOf("日", "一", "二", "三", "四", "五", "六")
-    } else {
-        listOf("S", "M", "T", "W", "T", "F", "S")
-    }
 }

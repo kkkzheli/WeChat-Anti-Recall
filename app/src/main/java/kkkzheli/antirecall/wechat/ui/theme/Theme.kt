@@ -1,73 +1,30 @@
 package kkkzheli.antirecall.wechat.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Typography as MaterialTypography
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kkkzheli.antirecall.wechat.App
 
-// -- Primary / WeChat-like palette --
-
-val Green1 = Color(0xFF07C160)
-val Green2 = Color(0xFF06AD56)
-val Green3 = Color(0xFF059C4D)
-
-val DarkGreen = Color(0xFF048A43)
-val DarkGreenVariant = Color(0xFF037A3A)
-
-val LightPrimaryBg = Color(0xFFF5FFF7)
-
-// -- Special-message colours --
-
+val GreenPrimary = Color(0xFF07C160)
 val RedPacketRed = Color(0xFFFF4444)
-val RedPacketRedDark = Color(0xFFE03535)
 val OrangeCall = Color(0xFFFF9800)
-val OrangeCallDark = Color(0xFFE08700)
-
-// -- Group accent --
-
 val GroupBlue = Color(0xFF2196F3)
 val GroupBlueLight = Color(0xFFBBDEFB)
-val GroupBlueDark = Color(0xFF1565C0)
-
-// -- Neutral palette --
-
-val NeutralBackground = Color(0xFFF6F6F6)
-val NeutralSurface = Color(0xFFFFFFFF)
-val NeutralCard = Color(0xFFFDFDFD)
-val NeutralGray = Color(0xFF666666)
-val NeutralGrayLight = Color(0xFF999999)
 val NeutralStroke = Color(0xFFE0E0E0)
-val NeutralText = Color(0xFF333333)
-val NeutralWhite = Color(0xFFFFFFFF)
-val NeutralBlack = Color(0xFF1A1A1A)
-
-// -- Dark-theme overrides --
-
-val DarkPrimaryBg = Color(0xFF0A1F12)
-val DarkSurface = Color(0xFF1E1E1E)
-val DarkCard = Color(0xFF2A2A2A)
-val DarkNeutralGray = Color(0xFFAAAAAA)
-val DarkNeutralText = Color(0xFFE0E0E0)
 val DarkNeutralStroke = Color(0xFF404040)
-val DarkRedPacket = Color(0xFF8B2020)
-val DarkOrangeCall = Color(0xFF8B5E2B)
 val DarkGroupBlue = Color(0xFF1A5287)
-
-// -- Typography helpers (used by MessageCard) --
 
 object AntiRecallTypography {
     val Timestamp: Float = 11f
@@ -77,7 +34,117 @@ object AntiRecallTypography {
     val BadgeText: Float = 12f
 }
 
-// -- Typography --
+@Immutable
+data class AntiRecallColors(
+    val specialTransfer: Color,
+    val specialRedPacket: Color,
+    val specialVoiceCall: Color,
+    val specialVideoCall: Color,
+    val groupAccent: Color,
+    val cardBackground: Color,
+    val cardBorder: Color,
+    val personalBackground: Color,
+)
+
+fun getLightColors(): AntiRecallColors {
+    return AntiRecallColors(
+        specialTransfer = RedPacketRed,
+        specialRedPacket = RedPacketRed,
+        specialVoiceCall = OrangeCall,
+        specialVideoCall = OrangeCall,
+        groupAccent = GroupBlueLight,
+        cardBackground = Color(0xFFFDFDFD),
+        cardBorder = NeutralStroke,
+        personalBackground = Color(0xFFFFFFFF),
+    )
+}
+
+fun getDarkColors(): AntiRecallColors {
+    return AntiRecallColors(
+        specialTransfer = Color(0xFF8B2020),
+        specialRedPacket = Color(0xFF8B2020),
+        specialVoiceCall = Color(0xFF8B5E2B),
+        specialVideoCall = Color(0xFF8B5E2B),
+        groupAccent = DarkGroupBlue,
+        cardBackground = Color(0xFF2A2A2A),
+        cardBorder = DarkNeutralStroke,
+        personalBackground = Color(0xFF1E1E1E),
+    )
+}
+
+private val LightScheme = lightColorScheme(
+    primary = GreenPrimary,
+    onPrimary = Color.White,
+    primaryContainer = GreenPrimary.copy(alpha = 0.15f),
+    onPrimaryContainer = GreenPrimary,
+    secondary = Color(0xFF5B7A6E),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFCCE6DB),
+    onSecondaryContainer = Color(0xFF182F25),
+    tertiary = Color(0xFF7B5C3D),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFEDDBB),
+    onTertiaryContainer = Color(0xFF301B04),
+    error = Color(0xFFBA1A1A),
+    onError = Color.White,
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    background = Color(0xFFFDFBF7),
+    onBackground = Color(0xFF1B1B1B),
+    surface = Color(0xFFFDFBF7),
+    onSurface = Color(0xFF1B1B1B),
+    surfaceVariant = Color(0xFFE4E2DC),
+    onSurfaceVariant = Color(0xFF464642),
+    outline = Color(0xFF777773),
+    outlineVariant = Color(0xFFC7C5BF),
+    inverseSurface = Color(0xFF30302E),
+    inverseOnSurface = Color(0xFFF3F0EB),
+    inversePrimary = Color(0xFFA0D6B4),
+    surfaceDim = Color(0xFFDED9D4),
+    surfaceBright = Color(0xFFFDFBF7),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF7F4EF),
+    surfaceContainer = Color(0xFFF1EFEB),
+    surfaceContainerHigh = Color(0xFFEBE9E4),
+    surfaceContainerHighest = Color(0xFFE6E3DE),
+)
+
+private val DarkScheme = darkColorScheme(
+    primary = Color(0xFFA0D6B4),
+    onPrimary = Color(0xFF003822),
+    primaryContainer = Color(0xFF005233),
+    onPrimaryContainer = Color(0xFF7CFBBA),
+    secondary = Color(0xFFB0CAC0),
+    onSecondary = Color(0xFF2D443A),
+    secondaryContainer = Color(0xFF435B50),
+    onSecondaryContainer = Color(0xFFCCE6DB),
+    tertiary = Color(0xFFDFC09F),
+    onTertiary = Color(0xFF483116),
+    tertiaryContainer = Color(0xFF61472B),
+    onTertiaryContainer = Color(0xFFFEDDBB),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF131311),
+    onBackground = Color(0xFFE5E4DF),
+    surface = Color(0xFF131311),
+    onSurface = Color(0xFFE5E4DF),
+    surfaceVariant = Color(0xFF434740),
+    onSurfaceVariant = Color(0xFFC4C7C0),
+    outline = Color(0xFF8E918B),
+    outlineVariant = Color(0xFF434740),
+    inverseSurface = Color(0xFFE5E4DF),
+    inverseOnSurface = Color(0xFF30302E),
+    inversePrimary = Color(0xFF006B42),
+    surfaceDim = Color(0xFF131311),
+    surfaceBright = Color(0xFF393835),
+    surfaceContainerLowest = Color(0xFF0E0E0D),
+    surfaceContainerLow = Color(0xFF1B1B19),
+    surfaceContainer = Color(0xFF1F1F1C),
+    surfaceContainerHigh = Color(0xFF2A2A27),
+    surfaceContainerHighest = Color(0xFF353431),
+)
 
 private val AntiRecallTypographyDefault = Typography(
     displayLarge = TextStyle(fontWeight = FontWeight.W400, fontSize = 57.sp),
@@ -97,80 +164,56 @@ private val AntiRecallTypographyDefault = Typography(
     labelSmall = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.sp),
 )
 
-// -- Color schemes --
+val LightAntiRecallColors = getLightColors()
+val DarkAntiRecallColors = getDarkColors()
 
-private val LightScheme = lightColorScheme(
-    primary = Green1,
-    onPrimary = NeutralWhite,
-    secondary = Green2,
-    onSecondary = NeutralWhite,
-    tertiary = Green3,
-    background = NeutralBackground,
-    surface = NeutralSurface,
-    onSurface = NeutralText,
-    surfaceVariant = LightPrimaryBg,
-    outline = NeutralStroke,
-)
+/** User theme preference persisted in DataStore. */
+enum class ThemePreference {
+    SYSTEM, DARK, LIGHT;
 
-private val DarkScheme = darkColorScheme(
-    primary = Green1,
-    onPrimary = NeutralBlack,
-    secondary = Green2,
-    onSecondary = NeutralBlack,
-    tertiary = Green3,
-    background = Color(0xFF0D0D0D),
-    surface = DarkSurface,
-    onSurface = DarkNeutralText,
-    surfaceVariant = DarkPrimaryBg,
-    outline = DarkNeutralStroke,
-)
+    companion object {
+        private val KEY = booleanPreferencesKey("pref_theme_mode")
 
-@Immutable
-data class AntiRecallColors(
-    val specialTransfer: Color,
-    val specialRedPacket: Color,
-    val specialVoiceCall: Color,
-    val specialVideoCall: Color,
-    val groupAccent: Color,
-    val cardBackground: Color,
-    val cardBorder: Color,
-    val personalBackground: Color,
-)
+        @JvmStatic
+        fun readFlow(): Flow<ThemePreference> = App.dataStore.data.map { prefs ->
+            when (prefs[KEY]) {
+                null -> SYSTEM
+                true -> DARK
+                false -> LIGHT
+            }
+        }
 
-val LightAntiRecallColors = AntiRecallColors(
-    specialTransfer = RedPacketRed,
-    specialRedPacket = RedPacketRed,
-    specialVoiceCall = OrangeCall,
-    specialVideoCall = OrangeCall,
-    groupAccent = GroupBlue,
-    cardBackground = NeutralCard,
-    cardBorder = NeutralStroke,
-    personalBackground = NeutralSurface,
-)
-
-val DarkAntiRecallColors = AntiRecallColors(
-    specialTransfer = DarkRedPacket,
-    specialRedPacket = DarkRedPacket,
-    specialVoiceCall = DarkOrangeCall,
-    specialVideoCall = DarkOrangeCall,
-    groupAccent = DarkGroupBlue,
-    cardBackground = DarkCard,
-    cardBorder = DarkNeutralStroke,
-    personalBackground = DarkSurface,
-)
+        @JvmStatic
+        suspend fun write(pref: ThemePreference) {
+            App.dataStore.edit { prefs ->
+                prefs.clear()
+                if (pref != SYSTEM) {
+                    prefs[KEY] = pref == DARK
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun WeChatAntiRecallTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    userPreferredTheme: ThemePreference = ThemePreference.SYSTEM,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val actualDark = when (userPreferredTheme) {
+        ThemePreference.SYSTEM -> systemDark
+        ThemePreference.DARK -> true
+        ThemePreference.LIGHT -> false
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (actualDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkScheme
+        actualDark -> DarkScheme
         else -> LightScheme
     }
 

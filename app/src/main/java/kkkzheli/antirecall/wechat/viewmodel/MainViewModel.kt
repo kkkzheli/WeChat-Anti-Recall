@@ -53,6 +53,10 @@ class MainViewModel(
     private val _systemAlertPermissionDenied = MutableLiveData(false)
     val systemAlertPermissionDenied: LiveData<Boolean> = _systemAlertPermissionDenied
 
+    // Last capture timestamp (updated when a new message is saved)
+    private val _lastCaptureTime = MutableStateFlow<Long?>(null)
+    val lastCaptureTime: StateFlow<Long?> = _lastCaptureTime
+
     init {
         loadMessages()
     }
@@ -62,6 +66,9 @@ class MainViewModel(
             repository.getAllMessages().collect { messages ->
                 _messages.value = messages
                 _messageCount.value = messages.size
+                if (messages.isNotEmpty()) {
+                    _lastCaptureTime.value = messages.firstOrNull()?.timestamp
+                }
             }
         }
 
@@ -102,7 +109,14 @@ class MainViewModel(
             _messageCount.value = 0
             _contactNames.value = emptyList()
             _groupNames.value = emptyList()
+            _lastCaptureTime.value = null
             clearFilter()
+        }
+    }
+
+    fun deleteMessage(id: Long) {
+        viewModelScope.launch {
+            repository.deleteById(id)
         }
     }
 

@@ -32,6 +32,10 @@ class MessageRepository(private val database: WeChatDatabase) {
         dao.clearAll()
     }
 
+    suspend fun deleteById(id: Long) {
+        dao.deleteById(id)
+    }
+
     private fun entityToMessage(entity: WeChatMessageEntity): Message {
         return Message(
             id = entity.id,

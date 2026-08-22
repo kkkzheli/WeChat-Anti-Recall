@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.service.KeepAliveService
 import kkkzheli.antirecall.wechat.service.NotificationCaptureService
@@ -32,6 +34,7 @@ import kkkzheli.antirecall.wechat.ui.compose.MainScreen
 import kkkzheli.antirecall.wechat.ui.compose.SearchScreen
 import kkkzheli.antirecall.wechat.ui.compose.SettingsScreen
 import kkkzheli.antirecall.wechat.ui.compose.filter.FilterScreen
+import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
 import kkkzheli.antirecall.wechat.ui.theme.WeChatAntiRecallTheme
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 import android.widget.Toast
@@ -42,6 +45,8 @@ class MainActivity : ComponentActivity() {
     private var currentScreen by mutableStateOf(Screen.MAIN)
 
     enum class Screen { MAIN, SEARCH, FILTER, SETTINGS }
+
+    private lateinit var viewModel: MainViewModel
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -54,20 +59,6 @@ class MainActivity : ComponentActivity() {
             showPermissionDialog()
         }
     }
-
-    private val systemAlertPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (!granted) {
-            viewModel.setSystemAlertPermissionDenied(true)
-        }
-    }
-
-    private val ignoreBatteryLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { }
-
-    private lateinit var viewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Full screen: content extends behind status bar, transparent color
@@ -91,18 +82,26 @@ class MainActivity : ComponentActivity() {
         })
 
         setContent {
-            WeChatAntiRecallTheme {
+            val themePref by ThemePreference.readFlow().collectAsState(initial = ThemePreference.SYSTEM)
+
+            WeChatAntiRecallTheme(userPreferredTheme = themePref) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val context = LocalContext.current
 
+                    val lastCaptureTimeMs by viewModel.lastCaptureTime.collectAsStateWithLifecycle()
+                    val nlsEnabled by lazy {
+                        val enabled = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+                        enabled != null && enabled.contains("${context.packageName}/kkkzheli.antirecall.wechat.service.NotificationCaptureService")
+                    }
+
                     AnimatedContent(
                         targetState = currentScreen,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(200)) togetherWith
-                            fadeOut(animationSpec = tween(200))
+                            fadeIn(animationSpec = tween(250)) togetherWith
+                            fadeOut(animationSpec = tween(250))
                         }
                     ) { screen ->
                         when (screen) {
@@ -112,6 +111,12 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToSearch = { currentScreen = Screen.SEARCH },
                                     onNavigateToFilter = { currentScreen = Screen.FILTER },
                                     onNavigateToSettings = { currentScreen = Screen.SETTINGS },
+                                    onDeleteMessage = { msg ->
+                                        viewModel.deleteMessage(msg.id)
+                                        Toast.makeText(applicationContext, "Message deleted", Toast.LENGTH_SHORT).show()
+                                    },
+                                    lastCaptureTimeMs = lastCaptureTimeMs,
+                                    nlsRegistered = nlsEnabled,
                                 )
                             }
                             Screen.SEARCH -> {
@@ -139,39 +144,17 @@ class MainActivity : ComponentActivity() {
         requestPermissions()
     }
 
+    private fun deleteSingleMessage(message: kkkzheli.antirecall.wechat.model.Message) {
+        // The actual deletion is handled via ViewModel which queries from Room DB
+        viewModel.deleteMessage(message.id)
+        Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show()
+    }
+
     override fun onResume() {
         super.onResume()
         // Re-ensure services are running after returning from settings/permissions
         startNotificationListener()
         startKeepAlive()
-    }    private fun requestNlsRefresh() {
-        try {
-            val enabledKey = "enabled_notification_listeners"
-            val current = android.provider.Settings.Secure.getString(
-                contentResolver, enabledKey
-            ) ?: ""
-            val myEntry = "kkkzheli.antirecall.wechat/kkkzheli.antirecall.wechat.service.NotificationCaptureService"
-            if (!current.contains(myEntry)) return
-
-            Log.d("NCS", "Refreshing NLS binding via toggle...")
-            // Remove our entry → system forgets us
-            android.provider.Settings.Secure.putString(
-                contentResolver, enabledKey,
-                if (current.contains(":")) current.split(':').filter { it != myEntry }.joinToString(":") else ""
-            )
-            // Wait for system to process
-            Thread.sleep(300L)
-            // Add back → system re-establishes binder → onListenerConnected fires!
-            android.provider.Settings.Secure.putString(contentResolver, enabledKey, current)
-            Log.d("NCS", "NLS refresh toggled — waiting for callback...")
-            // Schedule verification after toggle takes effect
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                Log.d("NCS", "Post-toggle: service started again")
-                startNotificationListener()
-            }, 1500L)
-        } catch (e: Exception) {
-            Log.w("NCS", "NLS refresh failed", e)
-        }
     }
 
     private fun requestPermissions() {
@@ -202,7 +185,6 @@ class MainActivity : ComponentActivity() {
         }
 
         // Registered — try starting the service.
-        // On HyperOS/Android 15+, the NLS may need a nudge after process death.
         val intent = Intent(this, NotificationCaptureService::class.java)
         try {
             startService(intent)
