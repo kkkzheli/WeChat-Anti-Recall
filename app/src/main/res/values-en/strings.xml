@@ -90,4 +90,9 @@
     <string name="nls_guide_step1">1. Go to Settings → Notifications → App Notification Management</string>
     <string name="nls_guide_step2">2. Find Anti Recall and enable it</string>
     <string name="nls_guide_step3">3. Return to app — service starts automatically</string>
+
+    <!-- Auto-start permission -->
+    <string name="settings_auto_start">Auto-start Management</string>
+    <string name="auto_start_permission">Tap to configure</string>
+    <string name="auto_start_info">Allow Anti Recall to auto-start in background, preventing battery optimization kills.</string>
 </resources>

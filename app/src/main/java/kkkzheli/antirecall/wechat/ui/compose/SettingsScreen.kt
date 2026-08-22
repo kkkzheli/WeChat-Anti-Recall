@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,14 +17,12 @@ import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,18 +33,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.R
+import kkkzheli.antirecall.wechat.ui.compose.github.GitHubOctocat
 import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
-import kkkzheli.antirecall.wechat.ui.theme.WeChatAntiRecallTheme
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,7 +85,7 @@ fun SettingsScreen(
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Icon(GitHubOctocat, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(text = stringResource(R.string.settings_github), fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -131,15 +122,15 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Version section
+            // Version section - reads from BuildConfig
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(text = stringResource(R.string.settings_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = "Anti Recall v1.0.0", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = "Anti Recall v1.5.0", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -172,6 +163,10 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     BatteryOptimizationRow(context)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    AutoStartPermissionRow(context)
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -231,22 +226,22 @@ private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreferenc
 
     Column {
         Row(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { index, (pref, label) ->
+            options.forEachIndexed { _, (pref, label) ->
                 OutlinedButton(
                     onClick = { scope.launch { ThemePreference.write(pref) } },
-                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                    modifier = Modifier.weight(1f).padding(horizontal = 3.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = if (pref == current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                     ),
                 ) {
                     when (pref) {
-                        ThemePreference.SYSTEM -> Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(16.dp))
-                        ThemePreference.DARK -> Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp))
-                        ThemePreference.LIGHT -> Icon(Icons.Default.LightMode, contentDescription = null, modifier = Modifier.size(16.dp))
+                        ThemePreference.SYSTEM -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(14.dp))
+                        ThemePreference.DARK -> Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(14.dp))
+                        ThemePreference.LIGHT -> Icon(Icons.Default.LightMode, contentDescription = null, modifier = Modifier.size(14.dp))
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(label, fontSize = 11.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(label, fontSize = 10.sp, maxLines = 1)
                 }
             }
         }
@@ -255,9 +250,6 @@ private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreferenc
 
 @Composable
 private fun BatteryOptimizationRow(context: Context) {
-    val canDrawOverlays = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        android.provider.Settings.canDrawOverlays(context)
-    } else true
     val isIgnoringBatteryOptimizations = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
         pm.isIgnoringBatteryOptimizations(context.packageName)
@@ -293,6 +285,117 @@ private fun BatteryOptimizationRow(context: Context) {
             Spacer(modifier = Modifier.weight(1f))
             CapsuleBadge(text = statusText, isError = !enabled)
         }
+    }
+}
+
+@Composable
+private fun AutoStartPermissionRow(context: Context) {
+    val statusText = stringResource(R.string.auto_start_permission)
+
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable {
+            launchAutoStartIntent(context)
+        },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp)
+                Text(text = stringResource(R.string.auto_start_info), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = statusText, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun launchAutoStartIntent(context: Context) {
+    try {
+        val pkg = context.packageName
+        when {
+            // Xiaomi / HyperOS
+            context.packageManager.hasSystemFeature("xiaomi.security.feature.AUTO_START_ENABLED") ||
+                android.os.Build.BRAND.contains("redmi", ignoreCase = true) ||
+                android.os.Build.BRAND.contains("xiaomi", ignoreCase = true) -> {
+                val intent = Intent().apply {
+                    component = android.content.ComponentName(
+                        "com.miui.securitycenter",
+                        "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                    )
+                }
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            // Huawei
+            android.os.Build.BRAND.contains("huawei", ignoreCase = true) ||
+                android.os.Build.BRAND.contains("honor", ignoreCase = true) -> {
+                val intent = Intent().apply {
+                    component = android.content.ComponentName(
+                        "com.huawei.systemmanager",
+                        "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
+                    )
+                }
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            // Oppo / Realme
+            android.os.Build.BRAND.contains("oppo", ignoreCase = true) ||
+                android.os.Build.BRAND.contains("realme", ignoreCase = true) -> {
+                val intent = Intent().apply {
+                    component = android.content.ComponentName(
+                        "com.coloros.safecenter",
+                        "com.coloros.safecenter.permission.startup.StartupAppListActivity"
+                    )
+                }
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            // Vivo
+            android.os.Build.BRAND.contains("vivo", ignoreCase = true) -> {
+                val intent = Intent().apply {
+                    component = android.content.ComponentName(
+                        "com.vivo.permissionmanager",
+                        "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
+                    )
+                }
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            // Samsung
+            android.os.Build.BRAND.contains("samsung", ignoreCase = true) -> {
+                val intent = Intent().apply {
+                    component = android.content.ComponentName(
+                        "com.samsung.android.sm",
+                        "com.samsung.android.sm.app.dashboard.SmDashboardActivity"
+                    )
+                }
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            // Generic fallback
+            else -> {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$pkg")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+        }
+    } catch (_: Exception) {
+        // Fall back to app details settings
+        try {
+            val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${context.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(fallback)
+        } catch (_: Exception) {}
     }
 }
 

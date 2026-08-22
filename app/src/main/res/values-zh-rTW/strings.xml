@@ -90,4 +90,9 @@
     <string name="nls_guide_step1">1. 前往「設定 → 通知 → 應用程式通知管理」</string>
     <string name="nls_guide_step2">2. 找到 Anti Recall 並開啟</string>
     <string name="nls_guide_step3">3. 返回應用程式，服務將自動啟動</string>
+
+    <!-- Auto-start permission -->
+    <string name="settings_auto_start">自動啟動管理</string>
+    <string name="auto_start_permission">點擊設定</string>
+    <string name="auto_start_info">允許 Anti Recall 在背景自動啟動，避免被系統省電策略終止。</string>
 </resources>

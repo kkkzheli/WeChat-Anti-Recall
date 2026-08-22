@@ -90,4 +90,9 @@
     <string name="nls_guide_step1">1. 前往系统「设置 → 通知 → 应用通知管理」</string>
     <string name="nls_guide_step2">2. 找到 Anti Recall 并开启</string>
     <string name="nls_guide_step3">3. 返回应用，服务将自动启动</string>
+
+    <!-- Auto-start permission -->
+    <string name="settings_auto_start">自启动管理</string>
+    <string name="auto_start_permission">点击设置</string>
+    <string name="auto_start_info">允许 Anti Recall 在后台自启动，避免被系统省电策略杀死。</string>
 </resources>
