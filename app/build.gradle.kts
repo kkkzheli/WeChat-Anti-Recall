@@ -13,8 +13,8 @@ android {
         applicationId = "kkkzheli.antirecall.wechat"
         minSdk = 23
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.5.0"
+        versionCode = 9
+        versionName = "1.5.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
