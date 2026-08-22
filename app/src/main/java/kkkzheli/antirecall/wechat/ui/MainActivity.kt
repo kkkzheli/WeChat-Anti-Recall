@@ -8,19 +8,18 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.material3.Surface
-import androidx.compose.material3.MaterialTheme
 import androidx.core.content.ContextCompat
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.service.KeepAliveService
@@ -66,7 +65,20 @@ class MainActivity : ComponentActivity() {
     private lateinit var viewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Register back button handler at Activity level for reliable navigation
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (currentScreen != Screen.MAIN) {
+                    currentScreen = Screen.MAIN
+                } else {
+                    enabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
 
         viewModel = MainViewModel(repository = App.instance.repository)
 
@@ -76,13 +88,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val focusManager = LocalFocusManager.current
                     val context = LocalContext.current
-
-                    // Wire system back button to Compose navigation
-                    BackHandler(enabled = currentScreen != Screen.MAIN) {
-                        currentScreen = Screen.MAIN
-                    }
 
                     when (currentScreen) {
                         Screen.MAIN -> {
@@ -118,12 +124,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onBackPressed() {
-        // If BackHandler doesn't handle it (e.g., at MAIN screen), call super
-        if (currentScreen == Screen.MAIN) {
-            super.onBackPressed()
-        }
-        // If BackHandler was consumed (currentScreen != MAIN), do nothing
-        // BackHandler already set currentScreen = MAIN
+        // Handled by onBackPressedDispatcher callback
     }
 
     private fun requestPermissions() {
@@ -165,7 +166,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showPermissionDialog() {
-        Toast.makeText(this, "通知权限是防撤回功能的核心，请在设置中开启", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Notification permission is required for anti-recall feature. Please enable it in settings.", Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroy() {

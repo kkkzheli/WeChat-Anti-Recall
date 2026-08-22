@@ -23,11 +23,12 @@ class MainViewModel(
     private val _groupNames = MutableStateFlow<List<String>>(emptyList())
     val groupNames: StateFlow<List<String>> = _groupNames
 
-    private val _selectedContact = MutableStateFlow<String?>(null)
-    val selectedContact: StateFlow<String?> = _selectedContact
+    // Multi-select support using Sets
+    private val _selectedContacts = MutableStateFlow<Set<String>>(emptySet())
+    val selectedContacts: StateFlow<Set<String>> = _selectedContacts
 
-    private val _selectedGroup = MutableStateFlow<String?>(null)
-    val selectedGroup: StateFlow<String?> = _selectedGroup
+    private val _selectedGroups = MutableStateFlow<Set<String>>(emptySet())
+    val selectedGroups: StateFlow<Set<String>> = _selectedGroups
 
     private val _filteredMessages = MutableLiveData<List<Message>>()
     val filteredMessages: LiveData<List<Message>> = _filteredMessages
@@ -85,6 +86,7 @@ class MainViewModel(
             _messageCount.value = 0
             _contactNames.value = emptyList()
             _groupNames.value = emptyList()
+            clearFilter()
         }
     }
 
@@ -96,21 +98,32 @@ class MainViewModel(
         _systemAlertPermissionDenied.value = denied
     }
 
-    fun selectContact(contact: String) {
-        _selectedContact.value = if (_selectedContact.value == contact) null else contact
-        _selectedGroup.value = null
+    // Multi-select toggle methods
+    fun toggleContact(contact: String) {
+        val current = _selectedContacts.value.toMutableSet()
+        if (current.contains(contact)) {
+            current.remove(contact)
+        } else {
+            current.add(contact)
+        }
+        _selectedContacts.value = current
         applyFilters()
     }
 
-    fun selectGroup(group: String) {
-        _selectedGroup.value = if (_selectedGroup.value == group) null else group
-        _selectedContact.value = null
+    fun toggleGroup(group: String) {
+        val current = _selectedGroups.value.toMutableSet()
+        if (current.contains(group)) {
+            current.remove(group)
+        } else {
+            current.add(group)
+        }
+        _selectedGroups.value = current
         applyFilters()
     }
 
     fun clearFilter() {
-        _selectedContact.value = null
-        _selectedGroup.value = null
+        _selectedContacts.value = emptySet()
+        _selectedGroups.value = emptySet()
         loadMessages()
     }
 
@@ -118,9 +131,13 @@ class MainViewModel(
         viewModelScope.launch {
             var allMessages: List<Message> = emptyList()
             repository.getAllMessages().collect { allMessages = it }
+
+            val contactsToFilter = _selectedContacts.value
+            val groupsToFilter = _selectedGroups.value
+
             val filtered: List<Message> = allMessages.filter { message ->
-                val contactMatch = _selectedContact.value == null || message.senderName == _selectedContact.value
-                val groupMatch = _selectedGroup.value == null || message.chatName == _selectedGroup.value
+                val contactMatch = contactsToFilter.isEmpty() || contactsToFilter.contains(message.senderName)
+                val groupMatch = groupsToFilter.isEmpty() || groupsToFilter.contains(message.chatName)
                 contactMatch && groupMatch
             }
             _filteredMessages.value = filtered

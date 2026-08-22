@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Observer
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.ui.compose.message.MessageCard
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
@@ -34,13 +35,9 @@ fun MainScreen(
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var count by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(viewModel.filteredMessages.value) {
-        val obs = androidx.lifecycle.Observer<List<Message>> { list -> messages = list ?: emptyList() }
-        viewModel.filteredMessages.observeForever(obs)
-    }
-    LaunchedEffect(viewModel.messageCount.value) {
-        val obs = androidx.lifecycle.Observer<Int> { c -> count = c ?: 0 }
-        viewModel.messageCount.observeForever(obs)
+    LaunchedEffect(Unit) {
+        viewModel.messages.observeForever { list -> messages = list ?: emptyList() }
+        viewModel.messageCount.observeForever { c -> count = c ?: 0 }
     }
 
     Scaffold(
@@ -84,7 +81,7 @@ fun MainScreen(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(messages, key = { it.id }) { message ->
+                items(messages) { message ->
                     MessageCard(message = message)
                 }
             }
