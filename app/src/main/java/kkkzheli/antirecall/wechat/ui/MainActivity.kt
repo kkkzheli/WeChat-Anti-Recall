@@ -144,6 +144,34 @@ class MainActivity : ComponentActivity() {
         // Re-ensure services are running after returning from settings/permissions
         startNotificationListener()
         startKeepAlive()
+    }    private fun requestNlsRefresh() {
+        try {
+            val enabledKey = "enabled_notification_listeners"
+            val current = android.provider.Settings.Secure.getString(
+                contentResolver, enabledKey
+            ) ?: ""
+            val myEntry = "kkkzheli.antirecall.wechat/kkkzheli.antirecall.wechat.service.NotificationCaptureService"
+            if (!current.contains(myEntry)) return
+
+            Log.d("NCS", "Refreshing NLS binding via toggle...")
+            // Remove our entry → system forgets us
+            android.provider.Settings.Secure.putString(
+                contentResolver, enabledKey,
+                if (current.contains(":")) current.split(':').filter { it != myEntry }.joinToString(":") else ""
+            )
+            // Wait for system to process
+            Thread.sleep(300L)
+            // Add back → system re-establishes binder → onListenerConnected fires!
+            android.provider.Settings.Secure.putString(contentResolver, enabledKey, current)
+            Log.d("NCS", "NLS refresh toggled — waiting for callback...")
+            // Schedule verification after toggle takes effect
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                Log.d("NCS", "Post-toggle: service started again")
+                startNotificationListener()
+            }, 1500L)
+        } catch (e: Exception) {
+            Log.w("NCS", "NLS refresh failed", e)
+        }
     }
 
     private fun requestPermissions() {
@@ -161,21 +189,26 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startNotificationListener() {
-        // On some devices (HyperOS/Android 15+), getEnabledListenerPackages()
-        // may not return our package even though the service is registered.
-        // Best approach: try to start the service directly; if it fails, ask for permission.
+        val pkgName = "kkkzheli.antirecall.wechat"
+        val current = android.provider.Settings.Secure.getString(
+            contentResolver, "enabled_notification_listeners"
+        ) ?: ""
+
+        if (!current.contains(pkgName)) {
+            Log.w("NCS", "NOT in listener list! Opening settings.")
+            startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            Toast.makeText(this, getString(kkkzheli.antirecall.wechat.R.string.permission_needs_message), Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // Registered — try starting the service.
+        // On HyperOS/Android 15+, the NLS may need a nudge after process death.
         val intent = Intent(this, NotificationCaptureService::class.java)
         try {
             startService(intent)
-            Log.d("NCS", "startService() SUCCESS")
+            Log.d("NCS", "startService()")
         } catch (e: Exception) {
-            Log.w("NCS", "startService() threw: ${e.message}, opening settings.")
-            startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            Toast.makeText(
-                this,
-                getString(kkkzheli.antirecall.wechat.R.string.permission_needs_message),
-                Toast.LENGTH_LONG
-            ).show()
+            Log.e("NCS", "startService() FAILED", e)
         }
     }
 

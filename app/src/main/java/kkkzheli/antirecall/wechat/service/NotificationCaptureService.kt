@@ -3,7 +3,6 @@ package kkkzheli.antirecall.wechat.service
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -24,6 +23,9 @@ import java.util.TimeZone
 class NotificationCaptureService : NotificationListenerService() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var _listenerConnected = false
+    val isListenerConnected: Boolean get() = _listenerConnected
+
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { timeZone = TimeZone.getDefault() }
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).apply { timeZone = TimeZone.getDefault() }
     private val specialDetector = SpecialMessageDetector()
@@ -39,11 +41,13 @@ class NotificationCaptureService : NotificationListenerService() {
     }
 
     override fun onListenerConnected() {
+        _listenerConnected = true
         Log.i(TAG, "===== Listener connected! Service is now active =====")
     }
 
     override fun onListenerDisconnected() {
-        Log.e(TAG, "===== Listener DISCONNECTED! Will reconnect on next activity resume ====")
+        Log.e(TAG, "===== Listener DISCONNECTED =====")
+        _listenerConnected = false
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -95,9 +99,8 @@ class NotificationCaptureService : NotificationListenerService() {
         val isGroup = senderName.contains("群") || senderName.contains("Group")
         val chatName = if (isGroup) senderName else ""
 
-        // Strip [N] prefix from message content (WeChat may prepend message count)
         val rawMessageText = contentText.ifEmpty { contentTitle }
-        val messageText = stripMessageCountPrefix(rawMessageText)
+        val messageText = stripBracketPrefix(rawMessageText)
 
         val specialInfo = specialDetector.detect(contentTitle, messageText)
         val isSpecial = specialInfo != null
@@ -139,7 +142,7 @@ class NotificationCaptureService : NotificationListenerService() {
 
         try {
             App.instance.repository.saveMessage(entity)
-            Log.d(TAG, "  ✅ Saved message: sender=${entity.senderName}, chat=${entity.chatName}, type=${entity.messageType}")
+            Log.d(TAG, "  Saved message: sender=${entity.senderName}, chat=${entity.chatName}, type=${entity.messageType}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save message: ${e.message}", e)
         }
@@ -149,8 +152,8 @@ class NotificationCaptureService : NotificationListenerService() {
         }
     }
 
-    /** Strip any [...] prefix from WeChat messages, e.g. [3], [3条], [3条消息]. */
-    private fun stripMessageCountPrefix(text: String): String {
+    /** Strip any [...] prefix from WeChat notifications, e.g. [3], [3条], [3条消息]. */
+    private fun stripBracketPrefix(text: String): String {
         return text.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
     }
 
@@ -160,9 +163,9 @@ class NotificationCaptureService : NotificationListenerService() {
         if (lines.isNotEmpty()) {
             for (line in lines) {
                 val colonIndex = line.indexOf(':')
-                if (colonIndex > 0 && colonIndex < 20) {
+                if (colonIndex > 0 && colonIndex < 40) {
                     val name = line.substring(0, colonIndex).trim()
-                        .let { stripMessageCountPrefix(it) }
+                        .let(::stripBracketPrefix)
                     if (name.isNotEmpty() && name.length < 40) {
                         return name
                     }
@@ -171,19 +174,19 @@ class NotificationCaptureService : NotificationListenerService() {
                 val spaceIndex = line.indexOf('、')
                 if (spaceIndex > 3 && spaceIndex < 40) {
                     val name = line.substring(0, spaceIndex).trim()
-                        .let { stripMessageCountPrefix(it) }
-                    if (name.isNotEmpty() && name.length < 40) {
+                        .let(::stripBracketPrefix)
+                    if (name.isNotEmpty()) {
                         return name
                     }
                 }
             }
 
-            val firstLine = lines.first().let(::stripMessageCountPrefix).trim()
+            val firstLine = lines.first().let(::stripBracketPrefix).trim()
             if (firstLine.isNotEmpty()) return firstLine
         }
 
-        val titleClean = stripMessageCountPrefix(title).trim()
-        return if (titleClean.isNotEmpty()) titleClean else stripMessageCountPrefix(text).trim()
+        val titleClean = stripBracketPrefix(title).trim()
+        return if (titleClean.isNotEmpty()) titleClean else stripBracketPrefix(text).trim()
     }
 
     private fun detectMessageType(text: String): MessageType {
