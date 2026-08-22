@@ -1,6 +1,7 @@
 package kkkzheli.antirecall.wechat.ui.compose
 
 import android.content.Context
+import android.content.res.Configuration
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -107,9 +108,12 @@ fun SettingsScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = stringResource(R.string.settings_author), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
+                        val isDark = LocalContext.current.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+                        val bgColor = if (isDark) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+                        val fgColor = if (isDark) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer
+                        Surface(shape = RoundedCornerShape(50), color = bgColor, modifier = Modifier.size(48.dp)) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(text = MainViewModel.AUTHOR_NAME.take(1).uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 20.sp)
+                                Text(text = MainViewModel.AUTHOR_NAME.take(1).uppercase(), fontWeight = FontWeight.Bold, color = fgColor, fontSize = 20.sp)
                             }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
