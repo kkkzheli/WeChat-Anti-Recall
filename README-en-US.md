@@ -3,6 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-Android%206.0--16.0-blue)](https://www.android.com/)
 
+[**简体中文**](README.md) | **English** | [**繁體中文**](README-TW.md)
+
 A WeChat anti-recall tool that captures notifications from WeChat before they can be recalled — preserving the original message content even after the sender recalls it.
 
 > This project does NOT modify WeChat's original APK. It uses Android's notification listener mechanism to achieve the anti-recall functionality.

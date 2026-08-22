@@ -3,7 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-Android%206.0--16.0-blue)](https://www.android.com/)
 
-**微信訊息防撤回工具** — 透過監聽通知欄訊息，在微信撤回之前捕獲並儲存訊息內容。
+[**简体中文**](README.md) | [**English**](README-en-US.md) | **繁體中文**
+
+**微信訊息防撤回工具**
 
 > 本專案不修改微信原始 APK，僅透過 Android 通知監聽機制實現防撤回功能。
 

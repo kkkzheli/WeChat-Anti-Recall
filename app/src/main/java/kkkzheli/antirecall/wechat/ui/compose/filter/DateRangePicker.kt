@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import kkkzheli.antirecall.wechat.R
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -53,7 +55,7 @@ fun DateRangePickerDialog(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text(text = "Start", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 4.dp))
+            Text(text = stringResource(R.string.filter_date_start), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 4.dp))
             MiniCalendar(
                 yearMonth = startYM, selectedDate = tempStart, maxDate = tempEnd,
                 onDateSelected = { d -> tempStart = d; startYM = YearMonth.from(d) },
@@ -64,7 +66,7 @@ fun DateRangePickerDialog(
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-            Text(text = "End", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 4.dp))
+            Text(text = stringResource(R.string.filter_date_end), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 4.dp))
             MiniCalendar(
                 yearMonth = endYM, selectedDate = tempEnd, minDate = tempStart,
                 onDateSelected = { d -> tempEnd = d; endYM = YearMonth.from(d) },
@@ -75,8 +77,8 @@ fun DateRangePickerDialog(
 
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                TextButton(onClick = ::commit) { Text("Confirm") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.filter_date_cancel)) }
+                TextButton(onClick = ::commit) { Text(stringResource(R.string.filter_date_confirm)) }
             }
         }
     }
@@ -95,7 +97,7 @@ private fun MiniCalendar(
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrevMonth) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous month") }
+            IconButton(onClick = onPrevMonth) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.filter_back_desc)) }
             Text(text = "${yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${yearMonth.year}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
             IconButton(onClick = onNextMonth) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month") }
         }

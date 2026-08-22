@@ -31,3 +31,11 @@ Thumbs.db
 # Release
 releases/
 *.log
+
+# Screenshots / test images
+screenshot*.png
+screenshot*.jpg
+*.jpg
+*.jpeg
+*.webp
+**/screenshots/

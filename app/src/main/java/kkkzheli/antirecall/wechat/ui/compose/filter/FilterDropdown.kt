@@ -16,10 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 import java.time.LocalDate
 
@@ -41,17 +43,17 @@ fun FilterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Filter") },
+                title = { Text(stringResource(R.string.filter_screen_title)) },
                 actions = {
                     if (selectedContacts.isNotEmpty() || selectedGroups.isNotEmpty() || startDate != null || endDate != null) {
                         IconButton(onClick = { viewModel.clearFilter() }) {
-                            Icon(Icons.Default.ClearAll, contentDescription = "Clear all")
+                            Icon(Icons.Default.ClearAll, contentDescription = stringResource(R.string.filter_clear_all_desc))
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.filter_back_desc))
                     }
                 }
             )
@@ -65,7 +67,7 @@ fun FilterScreen(
         ) {
             // Active filters
             if (selectedContacts.isNotEmpty() || selectedGroups.isNotEmpty() || startDate != null) {
-                Text(text = "Active Filters", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 8.dp))
+                Text(text = stringResource(R.string.filter_active_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 8.dp))
                 SelectedChips(
                     items = buildList {
                         addAll(selectedContacts.toList().map { "[c]$it" })
@@ -109,12 +111,12 @@ fun FilterScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Date Range",
+                            text = stringResource(R.string.filter_date_range),
                             fontWeight = FontWeight.SemiBold,
                             color = if (startDate != null) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = if (startDate != null && endDate != null) "${dateStr(startDate!!)} ~ ${dateStr(endDate!!)}" else if (startDate != null) "Start: ${dateStr(startDate!!)}" else "Tap to select date range",
+                            text = if (startDate != null && endDate != null) "${dateStr(startDate!!)} ~ ${dateStr(endDate!!)}" else if (startDate != null) "Start: ${dateStr(startDate!!)}" else stringResource(R.string.filter_select_date_range),
                             fontSize = 12.sp,
                             color = if (startDate != null) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         )
@@ -123,10 +125,10 @@ fun FilterScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Contacts (${contactNames.count()})", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            Text(text = stringResource(R.string.filter_contacts_count, contactNames.count()), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             FilterChipRow(items = contactNames, selectedItems = selectedContacts, onToggle = { viewModel.toggleContact(it) }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(24.dp))
-            Text(text = "Groups (${groupNames.count()})", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            Text(text = stringResource(R.string.filter_groups_count, groupNames.count()), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             FilterChipRow(items = groupNames, selectedItems = selectedGroups, onToggle = { viewModel.toggleGroup(it) }, modifier = Modifier.fillMaxWidth())
         }
     }
@@ -172,7 +174,7 @@ private fun SelectedChips(
                 ) {
                     Text(text = item, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Medium, maxLines = 1)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.filter_remove), modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                 }
             }
         }

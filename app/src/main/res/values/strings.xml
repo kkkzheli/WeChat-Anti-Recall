@@ -95,4 +95,19 @@
     <string name="settings_auto_start">自启动管理</string>
     <string name="auto_start_permission">点击设置</string>
     <string name="auto_start_info">允许 Anti Recall 在后台自启动，避免被系统省电策略杀死。</string>
+
+    <string name="settings_floating_window">悬浮窗权限</string>
+    <string name="filter_screen_title">筛选</string>
+    <string name="filter_clear_all_desc">清除所有筛选条件</string>
+    <string name="filter_back_desc">返回上一页</string>
+    <string name="filter_active_title">已选条件</string>
+    <string name="filter_date_range">日期范围</string>
+    <string name="filter_select_date_range">选择日期范围</string>
+    <string name="filter_contacts_count">%d 个联系人</string>
+    <string name="filter_groups_count">%d 个群聊</string>
+    <string name="filter_remove">移除</string>
+    <string name="filter_date_start">开始日期</string>
+    <string name="filter_date_end">结束日期</string>
+    <string name="filter_date_cancel">取消</string>
+    <string name="filter_date_confirm">确认</string>
 </resources>

@@ -90,7 +90,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(text = stringResource(R.string.settings_github), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = "${MainViewModel.AUTHOR_NAME}/WeChat-Anti-Recall", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
+                            Text(text = MainViewModel.GITHUB_REPO, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -131,7 +131,10 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(text = stringResource(R.string.settings_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = "Anti Recall v1.5.0", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val pkgInfo = try { context.packageManager.getPackageInfo(context.packageName, 0) } catch (_: Exception) { null }
+                            val vName = pkgInfo?.versionName ?: "?"
+                            val vCode = pkgInfo?.versionCode?.toString() ?: "?"
+                            Text(text = "Anti Recall v${vName} (build ${vCode})", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -161,7 +164,7 @@ fun SettingsScreen(
                         },
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
                     BatteryOptimizationRow(context)
 
@@ -173,10 +176,18 @@ fun SettingsScreen(
 
                     PermissionCardRow(
                         icon = Icons.Default.PhoneAndroid,
-                        title = "Floating Window",
+                        title = stringResource(R.string.settings_floating_window),
                         status = stringResource(R.string.settings_granted),
                         isEnabled = true,
-                        onClick = {},
+                        onClick = {
+                            try {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        },
                     )
                 }
             }
@@ -251,83 +262,72 @@ private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreferenc
 
 @Composable
 private fun BatteryOptimizationRow(context: Context) {
-    val isIgnoringBatteryOptimizations = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    val isIgnoring = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
         pm.isIgnoringBatteryOptimizations(context.packageName)
     } else true
 
-    val statusText = if (isIgnoringBatteryOptimizations) stringResource(R.string.settings_battery_unrestricted) else stringResource(R.string.settings_battery_restricted)
-    val enabled = isIgnoringBatteryOptimizations
-
     Card(
         modifier = Modifier.fillMaxWidth().clickable {
-            if (!enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    putExtra(Intent.EXTRA_PACKAGE_NAME, context.packageName)
+                }
+                context.startActivity(intent)
+            } catch (_: Exception) {
+                // Fallback: open app details
                 try {
-                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                         data = Uri.parse("package:${context.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-                    context.startActivity(intent)
+                    context.startActivity(fallback)
                 } catch (_: Exception) {}
             }
         },
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(modifier = Modifier.size(6.dp)) {
-                Box(
-                    modifier = Modifier.matchParentSize()
-                        .background(if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error, CircleShape),
-                )
-            }
+            Icon(Icons.Default.PowerSettingsNew, contentDescription = null, tint = if (isIgnoring) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
-            Icon(Icons.Default.PowerSettingsNew, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(text = stringResource(R.string.settings_battery_optimization), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                Text(text = stringResource(R.string.battery_opt_info), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text(text = stringResource(R.string.settings_battery_optimization), fontSize = 14.sp)
             Spacer(modifier = Modifier.weight(1f))
-            CapsuleBadge(text = statusText, isError = !enabled)
+            val statusText = if (isIgnoring) stringResource(R.string.settings_granted) else stringResource(R.string.settings_not_granted)
+            CapsuleBadge(text = statusText, isError = !isIgnoring)
         }
     }
 }
 
 @Composable
 private fun AutoStartPermissionRow(context: Context) {
-    val statusText = stringResource(R.string.auto_start_permission)
+    val isUnrestricted = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            pm.isIgnoringBatteryOptimizations(context.packageName)
+        } else true
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable {
             launchAutoStartIntent(context)
         },
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(modifier = Modifier.size(6.dp)) {
-                Box(
-                    modifier = Modifier.matchParentSize()
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
-                )
-            }
+            Icon(Icons.Default.Storage, contentDescription = null, tint = if (isUnrestricted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
-            Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                Text(text = stringResource(R.string.auto_start_info), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp)
             Spacer(modifier = Modifier.weight(1f))
-            CapsuleBadge(text = statusText, isError = false)
+            val statusText = if (isUnrestricted) stringResource(R.string.settings_granted) else stringResource(R.string.settings_not_granted)
+            CapsuleBadge(text = statusText, isError = !isUnrestricted)
         }
     }
 }

@@ -95,12 +95,9 @@ class NotificationCaptureService : NotificationListenerService() {
             return
         }
 
-        val senderName = extractSender(contentTitle, contentText)
+        val (senderName, messageText) = extractSenderAndContent(contentTitle, contentText)
         val isGroup = senderName.contains("群") || senderName.contains("Group")
         val chatName = if (isGroup) senderName else ""
-
-        val rawMessageText = contentText.ifEmpty { contentTitle }
-        val messageText = stripBracketPrefix(rawMessageText)
 
         val specialInfo = specialDetector.detect(contentTitle, messageText)
         val isSpecial = specialInfo != null
@@ -157,43 +154,46 @@ class NotificationCaptureService : NotificationListenerService() {
         return text.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
     }
 
-    private fun extractSender(title: String, text: String): String {
-        val lines = text.lineSequence().take(5).filter { it.isNotBlank() }.toList()
+    /**
+     * Extract sender name and message content from WeChat notification text.
+     * Format: [N]/[N条]/(none) + senderName + (:|：|、) + messageContent
+     * Returns Pair(senderName, content). If no separator found, title holds sender and text is content.
+     */
+    private fun extractSenderAndContent(title: String, text: String): Pair<String, String> {
+        val firstLine = text.trim().lineSequence().firstOrNull().orEmpty()
+        val stripped = stripBracketPrefix(firstLine).trim()
 
-        if (lines.isNotEmpty()) {
-            for (line in lines) {
-                val colonIndex = line.indexOf(':')
-                if (colonIndex > 0 && colonIndex < 40) {
-                    val name = line.substring(0, colonIndex).trim()
-                        .let(::stripBracketPrefix)
-                    if (name.isNotEmpty() && name.length < 40) {
-                        return name
-                    }
-                }
+        val sepPos = findFirstSeparatorPos(stripped)
 
-                val spaceIndex = line.indexOf('、')
-                if (spaceIndex > 3 && spaceIndex < 40) {
-                    val name = line.substring(0, spaceIndex).trim()
-                        .let(::stripBracketPrefix)
-                    if (name.isNotEmpty()) {
-                        return name
-                    }
-                }
-            }
-
-            // No colon or '、' separator found. Check if text equals firstLine (no sender prefix).
-            // In that case title likely holds the actual sender name.
-            val trimmedText = text.trim()
-            val firstLineStr = lines.first().let(::stripBracketPrefix).trim()
-            if (firstLineStr == trimmedText) {
-                val titleClean = stripBracketPrefix(title).trim()
-                if (titleClean.isNotEmpty()) return titleClean
-            }
-            if (firstLineStr.isNotEmpty()) return firstLineStr
+        val sender = if (sepPos > 0 && sepPos < 60) {
+            stripped.substring(0, sepPos).trim()
+        } else {
+            // No separator — single message; title holds sender, text IS the content
+            return stripBracketPrefix(title).trim() to stripped
         }
 
-        val titleClean = stripBracketPrefix(title).trim()
-        return if (titleClean.isNotEmpty()) titleClean else stripBracketPrefix(text).trim()
+        val content = if (sepPos > 0 && sepPos < stripped.length) {
+            stripped.substring(sepPos + 1).trim()
+        } else {
+            ""
+        }
+
+        // Sanity checks
+        if (sender.isEmpty() || sender.length > 60) {
+            return stripBracketPrefix(title).trim() to content
+        }
+        return sender to content
+    }
+
+    private fun findFirstSeparatorPos(text: String): Int {
+        var minPos = -1
+        listOf('：', ':', '、').forEach { sep ->
+            val pos = text.indexOf(sep)
+            if (pos > 0 && (minPos < 0 || pos < minPos)) {
+                minPos = pos
+            }
+        }
+        return minPos
     }
 
     private fun detectMessageType(text: String): MessageType {

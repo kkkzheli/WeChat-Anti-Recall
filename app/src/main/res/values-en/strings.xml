@@ -95,4 +95,19 @@
     <string name="settings_auto_start">Auto-start Management</string>
     <string name="auto_start_permission">Tap to configure</string>
     <string name="auto_start_info">Allow Anti Recall to auto-start in background, preventing battery optimization kills.</string>
+
+    <string name="settings_floating_window">Floating Window</string>
+    <string name="filter_screen_title">Filter</string>
+    <string name="filter_clear_all_desc">Clear all filters</string>
+    <string name="filter_back_desc">Back</string>
+    <string name="filter_active_title">Active Filters</string>
+    <string name="filter_date_range">Date Range</string>
+    <string name="filter_select_date_range">Select date range</string>
+    <string name="filter_contacts_count">%d Contacts</string>
+    <string name="filter_groups_count">%d Group Chats</string>
+    <string name="filter_remove">Remove</string>
+    <string name="filter_date_start">Start</string>
+    <string name="filter_date_end">End</string>
+    <string name="filter_date_cancel">Cancel</string>
+    <string name="filter_date_confirm">Confirm</string>
 </resources>

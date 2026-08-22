@@ -95,4 +95,19 @@
     <string name="settings_auto_start">自動啟動管理</string>
     <string name="auto_start_permission">點擊設定</string>
     <string name="auto_start_info">允許 Anti Recall 在背景自動啟動，避免被系統省電策略終止。</string>
+
+    <string name="settings_floating_window">浮動視窗權限</string>
+    <string name="filter_screen_title">篩選</string>
+    <string name="filter_clear_all_desc">清除所有篩選條件</string>
+    <string name="filter_back_desc">返回上一頁</string>
+    <string name="filter_active_title">已選條件</string>
+    <string name="filter_date_range">日期範圍</string>
+    <string name="filter_select_date_range">選擇日期範圍</string>
+    <string name="filter_contacts_count">%d 個聯絡人</string>
+    <string name="filter_groups_count">%d 個群組</string>
+    <string name="filter_remove">移除</string>
+    <string name="filter_date_start">開始日期</string>
+    <string name="filter_date_end">結束日期</string>
+    <string name="filter_date_cancel">取消</string>
+    <string name="filter_date_confirm">確認</string>
 </resources>
