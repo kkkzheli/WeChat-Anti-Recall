@@ -34,9 +34,9 @@ fun MainScreen(
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var count by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(viewModel.messages.value) {
+    LaunchedEffect(viewModel.filteredMessages.value) {
         val obs = androidx.lifecycle.Observer<List<Message>> { list -> messages = list ?: emptyList() }
-        viewModel.messages.observeForever(obs)
+        viewModel.filteredMessages.observeForever(obs)
     }
     LaunchedEffect(viewModel.messageCount.value) {
         val obs = androidx.lifecycle.Observer<Int> { c -> count = c ?: 0 }

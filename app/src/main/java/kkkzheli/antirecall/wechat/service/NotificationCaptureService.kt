@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.IBinder
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.db.WeChatMessageEntity
@@ -31,12 +32,18 @@ class NotificationCaptureService : NotificationListenerService() {
         if (sbn.packageName != PACKAGE_NAME) return
 
         scope.launch {
-            captureAndSave(notification, sbn.packageName)
+            try {
+                captureAndSave(notification, sbn.packageName)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error capturing notification", e)
+            }
         }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?, record: RankingMap?, reason: Int) {
-        // Message recalled - already captured in onNotificationPosted
+        if (sbn != null && sbn.packageName == PACKAGE_NAME) {
+            Log.d(TAG, "Message recalled by sender: ${sbn.packageName}")
+        }
     }
 
     private suspend fun captureAndSave(notification: android.app.Notification, packageName: String) {
@@ -50,13 +57,17 @@ class NotificationCaptureService : NotificationListenerService() {
         val isGroup = senderName.contains("群") || senderName.contains("Group")
         val chatName = if (isGroup) senderName else ""
 
-        val specialInfo = specialDetector.detect(contentTitle, contentText)
+        // Strip [N] prefix from message content (WeChat may prepend message count)
+        val rawMessageText = contentText.ifEmpty { contentTitle }
+        val messageText = stripMessageCountPrefix(rawMessageText)
+
+        val specialInfo = specialDetector.detect(contentTitle, messageText)
         val isSpecial = specialInfo != null
 
-        val messageText = if (specialInfo != null) {
-            specialDetector.getSpecialDisplayText(specialInfo, contentTitle, contentText)
+        val displayText = if (specialInfo != null) {
+            specialDetector.getSpecialDisplayText(specialInfo, contentTitle, messageText)
         } else {
-            contentText.ifEmpty { contentTitle }
+            messageText
         }
 
         val now = System.currentTimeMillis()
@@ -72,11 +83,11 @@ class NotificationCaptureService : NotificationListenerService() {
                 else -> MessageType.TEXT
             }
         } else {
-            detectMessageType(contentText)
+            detectMessageType(displayText)
         }
 
         val entity = WeChatMessageEntity(
-            content = messageText,
+            content = displayText,
             senderName = senderName,
             chatName = chatName,
             messageType = messageType.name,
@@ -88,33 +99,57 @@ class NotificationCaptureService : NotificationListenerService() {
             displayTime = displayTime
         )
 
-        App.instance.repository.saveMessage(entity)
+        try {
+            App.instance.repository.saveMessage(entity)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save message: ${e.message}", e)
+        }
 
         if (isSpecial) {
-            sendSpecialNotification(messageText, senderName, chatName)
+            sendSpecialNotification(displayText, senderName, chatName)
         }
     }
 
+    /**
+     * Strip WeChat message count prefix like "[3]" or "[5]你好" from message content.
+     * WeChat prepends the number of unread messages in brackets before the content.
+     */
+    private fun stripMessageCountPrefix(text: String): String {
+        return text.replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
+    }
+
     private fun extractSender(title: String, text: String): String {
-        val lines = text.lineSequence().take(3).filter { it.isNotBlank() }.toList()
-        val rawName = if (lines.isNotEmpty()) {
-            val firstLine = lines.first()
-            val colonIndex = firstLine.indexOf(':')
-            if (colonIndex > 0 && colonIndex < 15) {
-                firstLine.substring(0, colonIndex).trim()
-            } else {
-                val spaceIndex = firstLine.indexOf('、')
-                if (spaceIndex > 3 && spaceIndex < 15) {
-                    firstLine.substring(0, spaceIndex).trim()
-                } else {
-                    title.trim().ifEmpty { firstLine.trim() }
+        val lines = text.lineSequence().take(5).filter { it.isNotBlank() }.toList()
+
+        if (lines.isNotEmpty()) {
+            for (line in lines) {
+                val colonIndex = line.indexOf(':')
+                if (colonIndex > 0 && colonIndex < 20) {
+                    val name = line.substring(0, colonIndex).trim()
+                        .replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
+                    if (name.isNotEmpty() && name.length < 20) {
+                        return name
+                    }
+                }
+
+                val spaceIndex = line.indexOf('、')
+                if (spaceIndex > 3 && spaceIndex < 20) {
+                    val name = line.substring(0, spaceIndex).trim()
+                        .replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
+                    if (name.isNotEmpty()) {
+                        return name
+                    }
                 }
             }
-        } else {
-            title.trim()
+
+            val firstLine = lines.first()
+                .replace(Regex("^\\[\\d+\\]\\s*"), "")
+                .trim()
+            if (firstLine.isNotEmpty()) return firstLine
         }
-        // Strip "[N]" message count prefix (e.g. "[5]张三" → "张三")
-        return rawName.replace(Regex("^\\[\\d+\\][\\s:]*(?!\\d)"), "").trim()
+
+        val titleClean = title.replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
+        return if (titleClean.isNotEmpty()) titleClean else text.replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
     }
 
     private fun detectMessageType(text: String): MessageType {
@@ -145,12 +180,13 @@ class NotificationCaptureService : NotificationListenerService() {
 
             notificationManager.notify(notificationId, notification)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to send special notification", e)
         }
     }
 
     companion object {
         const val PACKAGE_NAME = "com.tencent.mm"
+        private const val TAG = "AntiRecall"
     }
 
     override fun onBind(intent: Intent?): IBinder? = super.onBind(intent)

@@ -23,6 +23,15 @@ class MainViewModel(
     private val _groupNames = MutableStateFlow<List<String>>(emptyList())
     val groupNames: StateFlow<List<String>> = _groupNames
 
+    private val _selectedContact = MutableStateFlow<String?>(null)
+    val selectedContact: StateFlow<String?> = _selectedContact
+
+    private val _selectedGroup = MutableStateFlow<String?>(null)
+    val selectedGroup: StateFlow<String?> = _selectedGroup
+
+    private val _filteredMessages = MutableLiveData<List<Message>>()
+    val filteredMessages: LiveData<List<Message>> = _filteredMessages
+
     private val _messageCount = MutableLiveData(0)
     val messageCount: LiveData<Int> = _messageCount
 
@@ -85,6 +94,39 @@ class MainViewModel(
 
     fun setSystemAlertPermissionDenied(denied: Boolean) {
         _systemAlertPermissionDenied.value = denied
+    }
+
+    fun selectContact(contact: String) {
+        _selectedContact.value = if (_selectedContact.value == contact) null else contact
+        _selectedGroup.value = null
+        applyFilters()
+    }
+
+    fun selectGroup(group: String) {
+        _selectedGroup.value = if (_selectedGroup.value == group) null else group
+        _selectedContact.value = null
+        applyFilters()
+    }
+
+    fun clearFilter() {
+        _selectedContact.value = null
+        _selectedGroup.value = null
+        loadMessages()
+    }
+
+    private fun applyFilters() {
+        viewModelScope.launch {
+            var allMessages: List<Message> = emptyList()
+            repository.getAllMessages().collect { allMessages = it }
+            val filtered: List<Message> = allMessages.filter { message ->
+                val contactMatch = _selectedContact.value == null || message.senderName == _selectedContact.value
+                val groupMatch = _selectedGroup.value == null || message.chatName == _selectedGroup.value
+                contactMatch && groupMatch
+            }
+            _filteredMessages.value = filtered
+            _messages.value = filtered
+            _messageCount.value = filtered.size
+        }
     }
 
     fun getMessages(): List<Message> = _messages.value.orEmpty()

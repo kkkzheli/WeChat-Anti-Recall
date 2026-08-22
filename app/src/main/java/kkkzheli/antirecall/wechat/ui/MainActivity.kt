@@ -7,12 +7,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.material3.Surface
 import androidx.core.content.ContextCompat
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.service.KeepAliveService
@@ -30,6 +30,7 @@ import kkkzheli.antirecall.wechat.ui.compose.SettingsScreen
 import kkkzheli.antirecall.wechat.ui.compose.filter.FilterScreen
 import kkkzheli.antirecall.wechat.ui.theme.WeChatAntiRecallTheme
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
+import android.widget.Toast
 
 class MainActivity : ComponentActivity() {
 
@@ -70,9 +71,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WeChatAntiRecallTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     val focusManager = LocalFocusManager.current
                     val context = LocalContext.current
+
+                    // Wire system back button to Compose navigation
+                    BackHandler(enabled = currentScreen != Screen.MAIN) {
+                        currentScreen = Screen.MAIN
+                    }
 
                     when (currentScreen) {
                         Screen.MAIN -> {
@@ -87,7 +96,10 @@ class MainActivity : ComponentActivity() {
                             SearchScreen(viewModel = viewModel, onBack = { currentScreen = Screen.MAIN })
                         }
                         Screen.FILTER -> {
-                            FilterScreen(viewModel = viewModel, onBack = { currentScreen = Screen.MAIN })
+                            FilterScreen(
+                                viewModel = viewModel,
+                                onBack = { currentScreen = Screen.MAIN },
+                            )
                         }
                         Screen.SETTINGS -> {
                             SettingsScreen(
@@ -102,6 +114,15 @@ class MainActivity : ComponentActivity() {
         }
 
         requestPermissions()
+    }
+
+    override fun onBackPressed() {
+        // If BackHandler doesn't handle it (e.g., at MAIN screen), call super
+        if (currentScreen == Screen.MAIN) {
+            super.onBackPressed()
+        }
+        // If BackHandler was consumed (currentScreen != MAIN), do nothing
+        // BackHandler already set currentScreen = MAIN
     }
 
     private fun requestPermissions() {
@@ -139,24 +160,6 @@ class MainActivity : ComponentActivity() {
             startForegroundService(intent)
         } else {
             startService(intent)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val powerMgr = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            val canIgnore = powerMgr.isIgnoringBatteryOptimizations(packageName)
-            if (!canIgnore) {
-                val intent = Intent(
-                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    Uri.parse("package:$packageName")
-                )
-                ignoreBatteryLauncher.launch(intent)
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.SYSTEM_ALERT_WINDOW) != PackageManager.PERMISSION_GRANTED) {
-                systemAlertPermissionLauncher.launch(Manifest.permission.SYSTEM_ALERT_WINDOW)
-            }
         }
     }
 
