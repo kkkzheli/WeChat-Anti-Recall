@@ -27,31 +27,68 @@ class NotificationCaptureService : NotificationListenerService() {
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     private val specialDetector = SpecialMessageDetector()
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?, record: RankingMap?) {
-        val notification = sbn?.notification ?: return
+    override fun onCreate() {
+        super.onCreate()
+        Log.i(TAG, "===== NotificationCaptureService onCreate =====")
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.i(TAG, "onStartCommand: intent=$intent, startId=$startId")
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onListenerConnected() {
+        Log.i(TAG, "===== Listener connected! Service is now active =====")
+    }
+
+    override fun onListenerDisconnected() {
+        Log.e(TAG, "===== Listener DISCONNECTED! Service dying! =====")
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        if (sbn == null) return
+
+        Log.d(TAG, "Notif received: pkg=${sbn.packageName}, id=${sbn.id}")
+
         if (sbn.packageName != PACKAGE_NAME) return
+
+        Log.d(TAG, "WeChat notif")
+
+        val notification = sbn.notification ?: run {
+            Log.w(TAG, "Notification is null")
+            return
+        }
 
         scope.launch {
             try {
                 captureAndSave(notification, sbn.packageName)
+                Log.d(TAG, "Message saved")
             } catch (e: Exception) {
                 Log.e(TAG, "Error capturing notification", e)
             }
         }
     }
 
-    override fun onNotificationRemoved(sbn: StatusBarNotification?, record: RankingMap?, reason: Int) {
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         if (sbn != null && sbn.packageName == PACKAGE_NAME) {
-            Log.d(TAG, "Message recalled by sender: ${sbn.packageName}")
+            Log.d(TAG, "Msg recalled: pkg=${sbn.packageName}")
         }
     }
 
     private suspend fun captureAndSave(notification: android.app.Notification, packageName: String) {
-        val extras = notification.extras ?: return
+        val extras = notification.extras ?: run {
+            Log.w(TAG, "Notification extras are null")
+            return
+        }
         val contentText = extras.getString(android.app.Notification.EXTRA_TEXT).orEmpty()
         val contentTitle = extras.getString(android.app.Notification.EXTRA_TITLE).orEmpty()
 
-        if (contentText.isEmpty() && contentTitle.isEmpty()) return
+        Log.d(TAG, "  EXTRA_TEXT='${contentText.take(100)}', EXTRA_TITLE='${contentTitle}'")
+
+        if (contentText.isEmpty() && contentTitle.isEmpty()) {
+            Log.w(TAG, "  Both content empty, skipping")
+            return
+        }
 
         val senderName = extractSender(contentTitle, contentText)
         val isGroup = senderName.contains("群") || senderName.contains("Group")
@@ -101,6 +138,7 @@ class NotificationCaptureService : NotificationListenerService() {
 
         try {
             App.instance.repository.saveMessage(entity)
+            Log.d(TAG, "  ✅ Saved message: sender=${entity.senderName}, chat=${entity.chatName}, type=${entity.messageType}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save message: ${e.message}", e)
         }
@@ -111,11 +149,10 @@ class NotificationCaptureService : NotificationListenerService() {
     }
 
     /**
-     * Strip WeChat message count prefix like "[3]" or "[5]你好" from message content.
-     * WeChat prepends the number of unread messages in brackets before the content.
+     * Strip WeChat message count prefix like [3], [28], [3条] from any text.
      */
     private fun stripMessageCountPrefix(text: String): String {
-        return text.replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
+        return text.replace(Regex("^\\[[\\d]+[条]?件]*?\\]\\s*"), "").trim()
     }
 
     private fun extractSender(title: String, text: String): String {
@@ -126,30 +163,28 @@ class NotificationCaptureService : NotificationListenerService() {
                 val colonIndex = line.indexOf(':')
                 if (colonIndex > 0 && colonIndex < 20) {
                     val name = line.substring(0, colonIndex).trim()
-                        .replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
-                    if (name.isNotEmpty() && name.length < 20) {
+                        .let { stripMessageCountPrefix(it) }
+                    if (name.isNotEmpty() && name.length < 40) {
                         return name
                     }
                 }
 
                 val spaceIndex = line.indexOf('、')
-                if (spaceIndex > 3 && spaceIndex < 20) {
+                if (spaceIndex > 3 && spaceIndex < 40) {
                     val name = line.substring(0, spaceIndex).trim()
-                        .replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
-                    if (name.isNotEmpty()) {
+                        .let { stripMessageCountPrefix(it) }
+                    if (name.isNotEmpty() && name.length < 40) {
                         return name
                     }
                 }
             }
 
-            val firstLine = lines.first()
-                .replace(Regex("^\\[\\d+\\]\\s*"), "")
-                .trim()
+            val firstLine = lines.first().let(::stripMessageCountPrefix).trim()
             if (firstLine.isNotEmpty()) return firstLine
         }
 
-        val titleClean = title.replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
-        return if (titleClean.isNotEmpty()) titleClean else text.replace(Regex("^\\[\\d+\\]\\s*"), "").trim()
+        val titleClean = stripMessageCountPrefix(title).trim()
+        return if (titleClean.isNotEmpty()) titleClean else stripMessageCountPrefix(text).trim()
     }
 
     private fun detectMessageType(text: String): MessageType {
@@ -186,7 +221,7 @@ class NotificationCaptureService : NotificationListenerService() {
 
     companion object {
         const val PACKAGE_NAME = "com.tencent.mm"
-        private const val TAG = "AntiRecall"
+        const val TAG = "AntiRecall"
     }
 
     override fun onBind(intent: Intent?): IBinder? = super.onBind(intent)

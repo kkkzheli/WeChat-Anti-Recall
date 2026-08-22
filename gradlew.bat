@@ -14,7 +14,7 @@
 @rem limitations under the License.
 @rem
 
-@if "%DEBUG%"=="" @echo off
+@if "%DEBUG%" == "" @echo off
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows
@@ -25,15 +25,12 @@
 if "%OS%"=="Windows_NT" setlocal
 
 set DIRNAME=%~dp0
-if "%DIRNAME%"=="" set DIRNAME=.
+if "%DIRNAME%" == "" set DIRNAME=.
 set APP_BASE_NAME=%~n0
 set APP_HOME=%DIRNAME%
 
-@rem Resolve any "." and ".." in APP_HOME to make it absolute.
-set APP_HOME=%APP_HOME%
-
-@rem Set default Java Home if not set
-if not defined JAVA_HOME set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
+@rem Resolve any "." and ".." in APP_HOME to make it shorter.
+for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
@@ -42,8 +39,8 @@ set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 if defined JAVA_HOME goto findJavaFromJavaHome
 
 set JAVA_EXE=java.exe
-%JAVA_EXE% -version >NUL 2>&1
-if %ERRORLEVEL% equ 0 goto execute
+%JAVA_EXE% -version >nul 2>&1
+if "%ERRORLEVEL%" == "0" goto init
 
 echo.
 echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
@@ -57,7 +54,7 @@ goto fail
 set JAVA_HOME=%JAVA_HOME:"=%
 set JAVA_EXE=%JAVA_HOME%/bin/java.exe
 
-if exist "%JAVA_EXE%" goto execute
+if exist "%JAVA_EXE%" goto init
 
 echo.
 echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
@@ -67,25 +64,40 @@ echo location of your Java installation.
 
 goto fail
 
-:execute
-@rem Setup the command line
+:init
+@rem Get command-line arguments, handling Windows variants
 
+if not "%OS%" == "Windows_NT" goto win9xME_args
+
+:win9xME_args
+@rem Slurp the command line arguments.
+set CMD_LINE_ARGS=
+set _ARGS=
+while "%(!args!)" != "" (
+   set _ARGS=!args!!
+   shift
+   set CMD_LINE_ARGS=!CMD_LINE_ARGS! %%_ARGS!
+)
+
+:win9xME_args_end
+set CMD_LINE_ARGS=%*
+
+@rem Expand the classpath
 set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
 
-
 @rem Execute Gradle
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %*
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
-if %OS%==Windows_NT endlocal
-
-:omega
-@rem Set to false to exit if an error occurs
-if %ERRORLEVEL% equ 0 goto :mainEnd
+if "%ERRORLEVEL%"=="0" goto mainEnd
 
 :fail
-exit /b 1
+rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+set EXIT_CODE=%ERRORLEVEL%
+if "%EXIT_CODE%" == "0" exit 1
+else exit %EXIT_CODE%
 
 :mainEnd
 if "%OS%"=="Windows_NT" endlocal

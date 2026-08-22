@@ -4,11 +4,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kkkzheli.antirecall.wechat.model.Message
-import kkkzheli.antirecall.wechat.repository.MessageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kkkzheli.antirecall.wechat.model.Message
+import kkkzheli.antirecall.wechat.repository.MessageRepository
+import java.time.LocalDate
 
 class MainViewModel(
     private val repository: MessageRepository
@@ -29,6 +30,16 @@ class MainViewModel(
 
     private val _selectedGroups = MutableStateFlow<Set<String>>(emptySet())
     val selectedGroups: StateFlow<Set<String>> = _selectedGroups
+
+    // Date range filtering
+    private val _startDate = MutableStateFlow<LocalDate?>(null)
+    val startDate: StateFlow<LocalDate?> = _startDate
+
+    private val _endDate = MutableStateFlow<LocalDate?>(null)
+    val endDate: StateFlow<LocalDate?> = _endDate
+
+    private val _showDatePicker = MutableStateFlow(false)
+    val showDatePicker: StateFlow<Boolean> = _showDatePicker
 
     private val _filteredMessages = MutableLiveData<List<Message>>()
     val filteredMessages: LiveData<List<Message>> = _filteredMessages
@@ -56,15 +67,20 @@ class MainViewModel(
 
         viewModelScope.launch {
             repository.getContactNames().collect { names ->
-                _contactNames.value = names.sortedBy { it.lowercase() }
+                _contactNames.value = names.map(::stripBracketPrefix).sortedBy { it.lowercase() }
             }
         }
 
         viewModelScope.launch {
             repository.getGroupNames().collect { names ->
-                _groupNames.value = names.sortedBy { it.lowercase() }
+                _groupNames.value = names.map(::stripBracketPrefix).sortedBy { it.lowercase() }
             }
         }
+    }
+
+    /** Strip [N] / [N条] prefix from a name. */
+    private fun stripBracketPrefix(name: String): String {
+        return name.replace(Regex("^\\[[\\d]+[条]?件]*?\\]\\s*"), "").trim()
     }
 
     fun setSearchQuery(query: String) {
@@ -98,8 +114,8 @@ class MainViewModel(
         _systemAlertPermissionDenied.value = denied
     }
 
-    // Multi-select toggle methods
     fun toggleContact(contact: String) {
+        // contact is already a cleaned display name (from sorted + stripBracketPrefix in loadMessages)
         val current = _selectedContacts.value.toMutableSet()
         if (current.contains(contact)) {
             current.remove(contact)
@@ -111,6 +127,7 @@ class MainViewModel(
     }
 
     fun toggleGroup(group: String) {
+        // group is already a cleaned display name
         val current = _selectedGroups.value.toMutableSet()
         if (current.contains(group)) {
             current.remove(group)
@@ -124,7 +141,32 @@ class MainViewModel(
     fun clearFilter() {
         _selectedContacts.value = emptySet()
         _selectedGroups.value = emptySet()
+        _startDate.value = null
+        _endDate.value = null
+        _showDatePicker.value = false
         loadMessages()
+    }
+
+    /**
+     * Set a date/time range filter. Either start or end may be null (partial range).
+     */
+    fun setDateRange(start: LocalDate?, end: LocalDate?) {
+        _startDate.value = start
+        _endDate.value = end
+        applyFilters()
+    }
+
+    /**
+     * Clear only the date range filter, keeping contacts/groups filters active.
+     */
+    fun clearDateRange() {
+        _startDate.value = null
+        _endDate.value = null
+        applyFilters()
+    }
+
+    fun showDatePicker(show: Boolean) {
+        _showDatePicker.value = show
     }
 
     private fun applyFilters() {
@@ -134,11 +176,29 @@ class MainViewModel(
 
             val contactsToFilter = _selectedContacts.value
             val groupsToFilter = _selectedGroups.value
+            val startDT = _startDate.value
+            val endDT = _endDate.value
 
             val filtered: List<Message> = allMessages.filter { message ->
-                val contactMatch = contactsToFilter.isEmpty() || contactsToFilter.contains(message.senderName)
+                // Contact filter — use cleaned names for exact match
+                val cleanMsgSender = stripBracketPrefix(message.senderName)
+                val contactMatch = contactsToFilter.isEmpty() || contactsToFilter.contains(cleanMsgSender)
+                // Group filter
                 val groupMatch = groupsToFilter.isEmpty() || groupsToFilter.contains(message.chatName)
-                contactMatch && groupMatch
+                if (!contactMatch || !groupMatch) return@filter false
+
+                // Date range filter — compare local dates only
+                if (startDT != null || endDT != null) {
+                    try {
+                        val msgDate = java.time.LocalDateTime.ofEpochSecond(message.timestamp / 1000, 0, java.time.ZoneOffset.UTC).toLocalDate()
+                        if (startDT != null && msgDate.isBefore(startDT)) return@filter false
+                        if (endDT != null && msgDate.isAfter(endDT)) return@filter false
+                    } catch (_: Exception) {
+                        return@filter false
+                    }
+                }
+
+                true
             }
             _filteredMessages.value = filtered
             _messages.value = filtered
