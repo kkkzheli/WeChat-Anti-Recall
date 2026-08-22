@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-Android%206.0--16.0-blue)](https://www.android.com/)
 
-[**简体中文**](README.md) | [**English**](README-en-US.md) | [**繁體中文**](README-TW.md)
+[简体中文](README.md) | [English](README-en-US.md) | [繁體中文](README-TW.md)
 
 微信消息防撤回工具 —— 通过监听通知栏消息，在微信撤回之前捕获并保存消息内容。
 
