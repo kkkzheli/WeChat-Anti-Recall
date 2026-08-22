@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -270,16 +271,24 @@ private fun BatteryOptimizationRow(context: Context) {
             }
         },
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(modifier = Modifier.size(6.dp)) {
+                Box(
+                    modifier = Modifier.matchParentSize()
+                        .background(if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error, CircleShape),
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
             Icon(Icons.Default.PowerSettingsNew, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(text = stringResource(R.string.settings_battery_optimization), fontSize = 14.sp)
+                Text(text = stringResource(R.string.settings_battery_optimization), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Text(text = stringResource(R.string.battery_opt_info), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(modifier = Modifier.weight(1f))
@@ -297,20 +306,28 @@ private fun AutoStartPermissionRow(context: Context) {
             launchAutoStartIntent(context)
         },
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(modifier = Modifier.size(6.dp)) {
+                Box(
+                    modifier = Modifier.matchParentSize()
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
             Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp)
+                Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Text(text = stringResource(R.string.auto_start_info), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(modifier = Modifier.weight(1f))
-            Text(text = statusText, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            CapsuleBadge(text = statusText, isError = false)
         }
     }
 }

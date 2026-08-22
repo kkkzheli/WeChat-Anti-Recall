@@ -100,8 +100,8 @@ class MainActivity : ComponentActivity() {
                     AnimatedContent(
                         targetState = currentScreen,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(250)) togetherWith
-                            fadeOut(animationSpec = tween(250))
+                            fadeIn(animationSpec = tween(350)) togetherWith
+                            fadeOut(animationSpec = tween(350))
                         }
                     ) { screen ->
                         when (screen) {

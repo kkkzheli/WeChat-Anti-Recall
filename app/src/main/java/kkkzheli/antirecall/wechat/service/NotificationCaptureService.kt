@@ -181,8 +181,15 @@ class NotificationCaptureService : NotificationListenerService() {
                 }
             }
 
-            val firstLine = lines.first().let(::stripBracketPrefix).trim()
-            if (firstLine.isNotEmpty()) return firstLine
+            // No colon or '、' separator found. Check if text equals firstLine (no sender prefix).
+            // In that case title likely holds the actual sender name.
+            val trimmedText = text.trim()
+            val firstLineStr = lines.first().let(::stripBracketPrefix).trim()
+            if (firstLineStr == trimmedText) {
+                val titleClean = stripBracketPrefix(title).trim()
+                if (titleClean.isNotEmpty()) return titleClean
+            }
+            if (firstLineStr.isNotEmpty()) return firstLineStr
         }
 
         val titleClean = stripBracketPrefix(title).trim()

@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * GitHub Octocat logo outline — custom vector drawable.
+ * GitHub Octocat logo — simple outline style from iconfont.cn.
  */
 val GitHubOctocat: ImageVector
     get() {
@@ -18,35 +18,40 @@ val GitHubOctocat: ImageVector
             name = "GitHub-Octocat",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
-            viewportWidth = 96f,
-            viewportHeight = 96f
+            viewportWidth = 24f,
+            viewportHeight = 24f
         ).apply {
             path(
                 fill = SolidColor(Color(0xFF000000)),
                 fillAlpha = 1f,
                 pathFillType = PathFillType.NonZero
             ) {
-                moveTo(13.0f, 81.0f)
-                curveTo(50.0f, 93.0f, 95.0f, 65.0f, 79.0f, 18.0f)
-                curveTo(73.0f, -0.5f, 36.0f, 3.0f, 32.0f, 16.0f)
-                curveTo(29.0f, 27.0f, 46.0f, 31.0f, 46.0f, 31.0f)
-                curveToRelative(-4.0f, 4.0f, 1.0f, 10.0f, 1.0f, 10.0f)
-                lineToRelative(17.0f, 4.0f)
-                curveTo(78.0f, 53.0f, 73.0f, 34.0f, 73.0f, 34.0f)
-                curveToRelative(3.0f, -2.0f, 20.0f, 1.0f, 20.0f, 1.0f)
-                curveToRelative(17.0f, 51.0f, -28.0f, 78.0f, -65.0f, 65.0f)
-                close()
-                moveTo(17.5f, 33.5f)
-                curveToRelative(-1.5f, 0.0f, -3.5f, 1.0f, -3.5f, 3.5f)
-                curveToRelative(0.0f, 2.5f, 2.0f, 3.5f, 3.5f, 3.5f)
-                curveToRelative(1.5f, 0.0f, 3.5f, -2.0f, 3.5f, -3.5f)
-                curveToRelative(0.0f, -2.5f, -2.0f, -3.5f, -3.5f, -3.5f)
-                close()
-                moveTo(73.5f, 33.5f)
-                curveToRelative(-1.5f, 0.0f, -3.5f, 1.0f, -3.5f, 3.5f)
-                curveToRelative(0.0f, 2.5f, 2.0f, 3.5f, 3.5f, 3.5f)
-                curveToRelative(1.5f, 0.0f, 3.5f, -2.0f, 3.5f, -3.5f)
-                curveToRelative(0.0f, -2.5f, -2.0f, -3.5f, -3.5f, -3.5f)
+                moveTo(12f, 2f)
+                arcTo(10f, 10f, 0f, false, false, 2f, 12f)
+                curveTo(2f, 16.42f, 4.87f, 20.17f, 8.84f, 21.5f)
+                curveTo(9.34f, 21.58f, 9.5f, 21.27f, 9.5f, 21f)
+                curveTo(9.5f, 20.77f, 9.5f, 20.14f, 9.5f, 19.31f)
+                curveTo(6.73f, 19.91f, 6.14f, 17.98f, 6.14f, 17.98f)
+                curveTo(5.68f, 16.81f, 5.03f, 16.5f, 5.03f, 16.5f)
+                curveTo(4.12f, 15.88f, 5.1f, 15.9f, 5.1f, 15.9f)
+                curveTo(6.1f, 15.97f, 6.63f, 16.93f, 6.63f, 16.93f)
+                curveTo(7.5f, 18.45f, 8.97f, 18f, 9.54f, 17.76f)
+                curveTo(9.63f, 17.11f, 9.89f, 16.67f, 10.17f, 16.42f)
+                curveTo(7.95f, 16.17f, 5.62f, 15.31f, 5.62f, 11.5f)
+                curveTo(5.62f, 10.41f, 6f, 9.5f, 6.65f, 8.79f)
+                curveTo(6.54f, 8.5f, 6.18f, 7.4f, 6.78f, 6.04f)
+                curveTo(6.78f, 6.04f, 7.61f, 5.78f, 9.5f, 7.17f)
+                curveTo(10.29f, 6.95f, 11.15f, 6.84f, 12f, 6.84f)
+                curveTo(12.85f, 6.84f, 13.71f, 6.95f, 14.5f, 7.17f)
+                curveTo(16.39f, 5.78f, 17.22f, 6.04f, 17.22f, 6.04f)
+                curveTo(17.82f, 7.4f, 17.46f, 8.5f, 17.35f, 8.79f)
+                curveTo(18f, 9.5f, 18.38f, 10.41f, 18.38f, 11.5f)
+                curveTo(18.38f, 15.32f, 16.04f, 16.16f, 13.81f, 16.41f)
+                curveTo(14.17f, 16.72f, 14.5f, 17.33f, 14.5f, 18.26f)
+                curveTo(14.5f, 19.6f, 14.5f, 20.68f, 14.5f, 21f)
+                curveTo(14.5f, 21.27f, 14.66f, 21.59f, 15.17f, 21.5f)
+                curveTo(19.14f, 20.16f, 22f, 16.42f, 22f, 12f)
+                arcTo(10f, 10f, 0f, false, false, 12f, 2f)
                 close()
             }
         }.build()

@@ -185,7 +185,7 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
 
 private fun defaultPersonalColors(scheme: ColorScheme): MessageCardColors {
     return MessageCardColors(
-        containerColor = scheme.surface,
+        containerColor = scheme.surfaceContainerLow,
         timestampColor = scheme.onSurfaceVariant,
         senderColor = scheme.onSurface,
         contentColor = scheme.onSurface,
