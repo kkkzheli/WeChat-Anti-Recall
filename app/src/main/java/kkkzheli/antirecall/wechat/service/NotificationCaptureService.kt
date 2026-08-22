@@ -19,12 +19,13 @@ import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 class NotificationCaptureService : NotificationListenerService() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { timeZone = TimeZone.getDefault() }
+    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).apply { timeZone = TimeZone.getDefault() }
     private val specialDetector = SpecialMessageDetector()
 
     override fun onCreate() {
@@ -42,7 +43,7 @@ class NotificationCaptureService : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
-        Log.e(TAG, "===== Listener DISCONNECTED! Service dying! =====")
+        Log.e(TAG, "===== Listener DISCONNECTED! Will reconnect on next activity resume ====")
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -148,11 +149,9 @@ class NotificationCaptureService : NotificationListenerService() {
         }
     }
 
-    /**
-     * Strip WeChat message count prefix like [3], [28], [3条] from any text.
-     */
+    /** Strip any [...] prefix from WeChat messages, e.g. [3], [3条], [3条消息]. */
     private fun stripMessageCountPrefix(text: String): String {
-        return text.replace(Regex("^\\[[\\d]+[条]?件]*?\\]\\s*"), "").trim()
+        return text.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
     }
 
     private fun extractSender(title: String, text: String): String {

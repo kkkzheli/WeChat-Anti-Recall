@@ -78,9 +78,9 @@ class MainViewModel(
         }
     }
 
-    /** Strip [N] / [N条] prefix from a name. */
+    /** Strip any [...] prefix, e.g. [3], [3条], [3条消息]. */
     private fun stripBracketPrefix(name: String): String {
-        return name.replace(Regex("^\\[[\\d]+[条]?件]*?\\]\\s*"), "").trim()
+        return name.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
     }
 
     fun setSearchQuery(query: String) {
@@ -187,10 +187,12 @@ class MainViewModel(
                 val groupMatch = groupsToFilter.isEmpty() || groupsToFilter.contains(message.chatName)
                 if (!contactMatch || !groupMatch) return@filter false
 
-                // Date range filter — compare local dates only
+                // Date range filter — compare local dates using device timezone
                 if (startDT != null || endDT != null) {
                     try {
-                        val msgDate = java.time.LocalDateTime.ofEpochSecond(message.timestamp / 1000, 0, java.time.ZoneOffset.UTC).toLocalDate()
+                        val msgDate = java.time.Instant.ofEpochMilli(message.timestamp)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
                         if (startDT != null && msgDate.isBefore(startDT)) return@filter false
                         if (endDT != null && msgDate.isAfter(endDT)) return@filter false
                     } catch (_: Exception) {
