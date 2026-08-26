@@ -1,5 +1,11 @@
 package kkkzheli.antirecall.wechat.ui.compose
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,12 +26,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Observer
+import kotlinx.coroutines.delay
 import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.ui.compose.message.MessageCard
@@ -56,7 +64,17 @@ fun MainScreen(
 
     val ctx = LocalContext.current
     val permissions = rememberPermissions(ctx)
-    val isRunning = lastCaptureTimeMs != null && (System.currentTimeMillis() - lastCaptureTimeMs) < 5 * 60_000L
+
+    // Heartbeat so the "running" banner flips back to the title banner when the
+    // last-capture window expires without any new DB emission or user input.
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(30_000)
+        }
+    }
+    val isRunning = lastCaptureTimeMs != null && (now - lastCaptureTimeMs) < 5 * 60_000L
 
     Scaffold(
         topBar = {
@@ -124,7 +142,7 @@ fun MainScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(messages) { message ->
-                        MessageCard(message = message, onClick = {}, onLongPress = { msg -> onDeleteMessage(msg) })
+                        MessageCard(message = message, onClick = {}, onDelete = { msg -> onDeleteMessage(msg) })
                     }
                 }
             }
@@ -136,8 +154,76 @@ fun MainScreen(
 private fun StatusBanner(permissions: PermissionsState, isRunning: Boolean, onClick: () -> Unit) {
     when {
         !permissions.allGranted -> PermissionWarningBanner(permissions, onClick)
-        isRunning -> CyanGradientBanner(stringResource(R.string.status_running))
-        else -> CyanGradientBanner(stringResource(R.string.banner_keepalive_enabled))
+        isRunning -> RunningBanner()
+        else -> AntiRecallTitleBanner()
+    }
+}
+
+@Composable
+private fun RunningBanner() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0x8C0D47A1))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(Color.White, CircleShape),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.status_running),
+            fontSize = 12.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun AntiRecallTitleBanner() {
+    val transition = rememberInfiniteTransition(label = "titleWave")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2200, easing = LinearEasing), RepeatMode.Restart),
+        label = "phase",
+    )
+    var bannerWidth by remember { mutableIntStateOf(0) }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF0B2E4F))
+            .onSizeChanged { bannerWidth = it.width }
+            .padding(vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        val w = bannerWidth.toFloat()
+        val brush = if (w > 0f) {
+            Brush.horizontalGradient(
+                colors = listOf(
+                    Color(0xFF1565C0),
+                    Color(0xFF00E5FF),
+                    Color(0xFF4FC3F7),
+                    Color(0xFF1565C0),
+                ),
+                startX = phase * w * 2f - w,
+                endX = phase * w * 2f + w,
+            )
+        } else {
+            Brush.horizontalGradient(listOf(Color(0xFF00BCD4), Color(0xFF1565C0)))
+        }
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.ExtraBold,
+                brush = brush,
+            ),
+            color = Color(0xFF00BCD4),
+        )
     }
 }
 
@@ -170,34 +256,6 @@ private fun PermissionWarningBanner(permissions: PermissionsState, onClick: () -
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
-        )
-    }
-}
-
-@Composable
-private fun CyanGradientBanner(text: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.horizontalGradient(
-                    listOf(Color(0xFF00BCD4), Color(0xFF1565C0))
-                )
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(Color.White, CircleShape),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            fontSize = 12.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Medium,
         )
     }
 }

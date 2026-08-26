@@ -112,3 +112,36 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }
+
+// Verify trilingual string parity before every build. Skips with a warning
+// when no python interpreter is available; fails the build on any mismatch.
+val verifyTranslations by tasks.registering {
+    group = "verification"
+    description = "Ensure zh/en/zh-rTW string resources stay in sync and all UI text is localized"
+    doLast {
+        val script = rootProject.file("tools/check_translations.py")
+        if (!script.exists()) {
+            throw GradleException("Missing tools/check_translations.py — run: git pull && see repo tools/")
+        }
+        var ran = false
+        for (py in listOf("python", "python3")) {
+            try {
+                val proc = ProcessBuilder(py, script.absolutePath).redirectErrorStream(true).start()
+                println(proc.inputStream.bufferedReader().readText().trim())
+                if (proc.waitFor() != 0) {
+                    throw GradleException("Translation check failed — fix string resources before building.")
+                }
+                ran = true
+                break
+            } catch (e: Exception) {
+                if (e is GradleException) throw e
+                // interpreter not found — try the next candidate
+            }
+        }
+        if (!ran) {
+            println("WARN: no python interpreter found; skipping translation check")
+        }
+    }
+}
+
+tasks.named("preBuild").configure { dependsOn(verifyTranslations) }

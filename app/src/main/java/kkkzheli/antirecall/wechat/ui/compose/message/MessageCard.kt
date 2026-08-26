@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CallEnd
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalMall
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.*
@@ -32,40 +33,71 @@ import kkkzheli.antirecall.wechat.model.SpecialType
 import kkkzheli.antirecall.wechat.ui.theme.RedPacketRed
 import kkkzheli.antirecall.wechat.ui.theme.OrangeCall
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MessageCard(
     message: Message,
     onClick: (Message) -> Unit = {},
-    onLongPress: ((Message) -> Unit)? = null,
+    onDelete: ((Message) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val cardColors = resolveMessageCardColors(message)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    Card(
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value != SwipeToDismissBoxValue.Settled) {
+                onDelete?.invoke(message)
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 24.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.delete_message_title),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = LocalIndication.current,
-                    onClick = { onClick(message) },
-                    onLongClick = onLongPress?.let { { it(message) } },
-                )
-                .alpha(if (isPressed) 0.7f else 1f)
-                .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(16.dp),
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = LocalIndication.current,
+                        onClick = { onClick(message) },
+                    )
+                    .alpha(if (isPressed) 0.7f else 1f)
+                    .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
             Column(
                 modifier = Modifier.widthIn(max = 72.dp),
                 horizontalAlignment = Alignment.Start,
@@ -127,6 +159,7 @@ fun MessageCard(
                     )
                 }
             }
+        }
         }
     }
 }

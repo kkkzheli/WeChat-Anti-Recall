@@ -28,6 +28,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.collectAsState
 import kkkzheli.antirecall.wechat.App
+import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.service.KeepAliveService
 import kkkzheli.antirecall.wechat.service.NotificationCaptureService
 import kkkzheli.antirecall.wechat.ui.compose.MainScreen
@@ -109,7 +110,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToSettings = { currentScreen = Screen.SETTINGS },
                                     onDeleteMessage = { msg ->
                                         viewModel.deleteMessage(msg.id)
-                                        Toast.makeText(applicationContext, "Message deleted", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(applicationContext, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
                                     },
                                     lastCaptureTimeMs = lastCaptureTimeMs,
                                 )
@@ -137,12 +138,6 @@ class MainActivity : ComponentActivity() {
         }
 
         requestPermissions()
-    }
-
-    private fun deleteSingleMessage(message: kkkzheli.antirecall.wechat.model.Message) {
-        // The actual deletion is handled via ViewModel which queries from Room DB
-        viewModel.deleteMessage(message.id)
-        Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show()
     }
 
     override fun onResume() {
@@ -199,6 +194,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showPermissionDialog() {
-        Toast.makeText(this, "Notification permission is required for anti-recall feature. Please enable it in settings.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.permission_needs_message), Toast.LENGTH_LONG).show()
     }
 }

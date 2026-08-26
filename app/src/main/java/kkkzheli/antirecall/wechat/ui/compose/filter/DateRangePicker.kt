@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,11 +26,9 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+@Composable
 private fun getDayAbbreviations(): List<String> {
-    return when (Locale.getDefault().language) {
-        "zh" -> listOf("日", "一", "二", "三", "四", "五", "六")
-        else -> listOf("S", "M", "T", "W", "T", "F", "S")
-    }
+    return LocalContext.current.resources.getStringArray(R.array.weekday_abbr).toList()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,7 +98,7 @@ private fun MiniCalendar(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onPrevMonth) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.filter_back_desc)) }
             Text(text = "${yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${yearMonth.year}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-            IconButton(onClick = onNextMonth) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month") }
+            IconButton(onClick = onNextMonth) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.next_month)) }
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {

@@ -123,4 +123,24 @@
     <!-- Status banner -->
     <string name="banner_permission_missing">權限未給全：%s</string>
     <string name="banner_keepalive_enabled">保活功能已開啟！</string>
+
+    <!-- Delete via swipe -->
+    <string name="msg_deleted">訊息已刪除</string>
+
+    <!-- Settings about/version -->
+    <string name="settings_about_project">Anti Recall 專案</string>
+    <string name="settings_version_info">Anti Recall v%1$s（建置 %2$s）</string>
+    <string name="settings_about_tech">基於 Material Design 3 / Jetpack Compose\n目標 API 34 · minSdk 23</string>
+
+    <!-- Date range picker -->
+    <string name="next_month">下月</string>
+    <string-array name="weekday_abbr">
+        <item>日</item>
+        <item>一</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+    </string-array>
 </resources>

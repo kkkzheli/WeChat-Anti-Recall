@@ -121,7 +121,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(text = MainViewModel.AUTHOR_NAME, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                            Text(text = "Anti Recall Project", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = stringResource(R.string.settings_about_project), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -140,11 +140,11 @@ fun SettingsScreen(
                             val pkgInfo = try { context.packageManager.getPackageInfo(context.packageName, 0) } catch (_: Exception) { null }
                             val vName = pkgInfo?.versionName ?: "?"
                             val vCode = pkgInfo?.versionCode?.toString() ?: "?"
-                            Text(text = "Anti Recall v${vName} (build ${vCode})", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(text = stringResource(R.string.settings_version_info, vName, vCode), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Based on Material Design 3 / Jetpack Compose\nTarget API 34 · minSdk 23", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    Text(text = stringResource(R.string.settings_about_tech), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                 }
             }
 

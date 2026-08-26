@@ -18,7 +18,7 @@ interface WeChatMessageDao {
            "ORDER BY timestamp DESC")
     fun searchMessages(query: String): Flow<List<WeChatMessageEntity>>
 
-    @Query("SELECT DISTINCT senderName FROM wechat_messages ORDER BY senderName ASC")
+    @Query("SELECT DISTINCT senderName FROM wechat_messages WHERE isGroup = 0 ORDER BY senderName ASC")
     fun getContactNames(): Flow<List<String>>
 
     @Query("SELECT DISTINCT chatName FROM wechat_messages WHERE isGroup = 1 ORDER BY chatName ASC")

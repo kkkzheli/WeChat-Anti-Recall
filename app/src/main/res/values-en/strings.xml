@@ -123,4 +123,24 @@
     <!-- Status banner -->
     <string name="banner_permission_missing">Permissions missing: %s</string>
     <string name="banner_keepalive_enabled">Keep-alive enabled!</string>
+
+    <!-- Delete via swipe -->
+    <string name="msg_deleted">Message deleted</string>
+
+    <!-- Settings about/version -->
+    <string name="settings_about_project">Anti Recall Project</string>
+    <string name="settings_version_info">Anti Recall v%1$s (build %2$s)</string>
+    <string name="settings_about_tech">Based on Material Design 3 / Jetpack Compose\nTarget API 34 · minSdk 23</string>
+
+    <!-- Date range picker -->
+    <string name="next_month">Next month</string>
+    <string-array name="weekday_abbr">
+        <item>Su</item>
+        <item>Mo</item>
+        <item>Tu</item>
+        <item>We</item>
+        <item>Th</item>
+        <item>Fr</item>
+        <item>Sa</item>
+    </string-array>
 </resources>
