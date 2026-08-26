@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Observer
@@ -25,6 +27,7 @@ import kkkzheli.antirecall.wechat.R
 import androidx.compose.ui.res.stringResource
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.ui.compose.message.MessageCard
+import kkkzheli.antirecall.wechat.util.AccessibilityUtil
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
 /**
@@ -52,6 +55,7 @@ fun MainScreen(
     }
 
     val ctx = LocalContext.current
+    val accessibilityEnabled = rememberAccessibilityEnabled(ctx)
 
     Scaffold(
         topBar = {
@@ -94,6 +98,13 @@ fun MainScreen(
                 },
             )
 
+            // Accessibility keep-alive guide
+            AccessibilityGuideBanner(
+                context = ctx,
+                accessibilityEnabled = accessibilityEnabled,
+                nlsRegistered = nlsRegistered,
+            )
+
             if (messages.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -121,6 +132,52 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AccessibilityGuideBanner(
+    context: android.content.Context,
+    accessibilityEnabled: Boolean,
+    nlsRegistered: Boolean,
+) {
+    if (!nlsRegistered || accessibilityEnabled) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f))
+            .clickable { AccessibilityUtil.openSettings(context) }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Accessible,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.accessibility_guide_title),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Text(
+                text = stringResource(R.string.accessibility_guide_desc),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.accessibility_guide_action),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

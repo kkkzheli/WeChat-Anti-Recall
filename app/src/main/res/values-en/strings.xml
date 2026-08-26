@@ -110,4 +110,13 @@
     <string name="filter_date_end">End</string>
     <string name="filter_date_cancel">Cancel</string>
     <string name="filter_date_confirm">Confirm</string>
+
+    <!-- Accessibility keep-alive -->
+    <string name="settings_accessibility_keepalive">Accessibility Keep-alive</string>
+    <string name="accessibility_badge_enabled">Enabled</string>
+    <string name="accessibility_badge_disabled">Disabled</string>
+    <string name="accessibility_guide_title">Enable accessibility keep-alive</string>
+    <string name="accessibility_guide_desc">Prevents the system from killing Anti Recall so notification protection never stops.</string>
+    <string name="accessibility_guide_action">Enable now</string>
+    <string name="accessibility_service_description">Keeps Anti Recall alive so the system doesn\'t reclaim it. This service reads no window content.</string>
 </resources>

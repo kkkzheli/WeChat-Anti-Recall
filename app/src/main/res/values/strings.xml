@@ -110,4 +110,13 @@
     <string name="filter_date_end">结束日期</string>
     <string name="filter_date_cancel">取消</string>
     <string name="filter_date_confirm">确认</string>
+
+    <!-- Accessibility keep-alive -->
+    <string name="settings_accessibility_keepalive">无障碍保活</string>
+    <string name="accessibility_badge_enabled">已开启</string>
+    <string name="accessibility_badge_disabled">未开启</string>
+    <string name="accessibility_guide_title">开启无障碍保活</string>
+    <string name="accessibility_guide_desc">防止 Anti Recall 被系统杀死，通知保护不间断。</string>
+    <string name="accessibility_guide_action">去开启</string>
+    <string name="accessibility_service_description">保持 Anti Recall 进程存活，避免被系统回收。本服务不读取任何窗口内容。</string>
 </resources>

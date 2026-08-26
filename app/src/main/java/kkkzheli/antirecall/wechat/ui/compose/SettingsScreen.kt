@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
@@ -41,6 +42,7 @@ import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.ui.compose.github.GitHubOctocat
 import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
+import kkkzheli.antirecall.wechat.util.AccessibilityUtil
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -175,6 +177,10 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AutoStartPermissionRow(context)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    AccessibilityKeepAliveRow(context)
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -336,8 +342,32 @@ private fun AutoStartPermissionRow(context: Context) {
     }
 }
 
-private fun launchAutoStartIntent(context: Context) {
-    try {
+@Composable
+private fun AccessibilityKeepAliveRow(context: Context) {
+    val enabled = rememberAccessibilityEnabled(context)
+
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable {
+            AccessibilityUtil.openSettings(context)
+        },
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.AutoMirrored.Filled.Accessible, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(text = stringResource(R.string.settings_accessibility_keepalive), fontSize = 14.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            val statusText = if (enabled) stringResource(R.string.accessibility_badge_enabled) else stringResource(R.string.accessibility_badge_disabled)
+            CapsuleBadge(text = statusText, isError = !enabled)
+        }
+    }
+}
+
+private fun launchAutoStartIntent(context: Context) {    try {
         val pkg = context.packageName
         when {
             // Xiaomi / HyperOS
