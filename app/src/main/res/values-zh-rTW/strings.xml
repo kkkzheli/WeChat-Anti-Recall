@@ -119,4 +119,8 @@
     <string name="accessibility_guide_desc">防止 Anti Recall 被系統殺死，通知保護不間斷。</string>
     <string name="accessibility_guide_action">去開啟</string>
     <string name="accessibility_service_description">保持 Anti Recall 進程存活，避免被系統回收。本服務不讀取任何視窗內容。</string>
+
+    <!-- Status banner -->
+    <string name="banner_permission_missing">權限未給全：%s</string>
+    <string name="banner_keepalive_enabled">保活功能已開啟！</string>
 </resources>

@@ -119,4 +119,8 @@
     <string name="accessibility_guide_desc">Prevents the system from killing Anti Recall so notification protection never stops.</string>
     <string name="accessibility_guide_action">Enable now</string>
     <string name="accessibility_service_description">Keeps Anti Recall alive so the system doesn\'t reclaim it. This service reads no window content.</string>
+
+    <!-- Status banner -->
+    <string name="banner_permission_missing">Permissions missing: %s</string>
+    <string name="banner_keepalive_enabled">Keep-alive enabled!</string>
 </resources>

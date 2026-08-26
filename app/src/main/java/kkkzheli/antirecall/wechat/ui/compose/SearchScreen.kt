@@ -41,6 +41,12 @@ fun SearchScreen(
         viewModel.setSearchQuery(localQuery)
     }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.setSearchQuery("")
+        }
+    }
+
     // Observe messages from LiveData
     var allMessages by remember { mutableStateOf<List<Message>>(emptyList()) }
     val queryKey = localQuery.hashCode()

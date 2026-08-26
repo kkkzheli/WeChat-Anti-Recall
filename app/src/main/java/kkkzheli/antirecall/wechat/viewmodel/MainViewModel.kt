@@ -15,8 +15,11 @@ class MainViewModel(
     private val repository: MessageRepository
 ) : ViewModel() {
 
+    private val _allMessages = MutableLiveData<List<Message>>(emptyList())
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<Message>> = _messages
+
+    private val _searchQuery = MutableStateFlow("")
 
     private val _contactNames = MutableStateFlow<List<String>>(emptyList())
     val contactNames: StateFlow<List<String>> = _contactNames
@@ -63,12 +66,12 @@ class MainViewModel(
 
     private fun loadMessages() {
         viewModelScope.launch {
-            repository.getAllMessages().collect { messages ->
-                _messages.value = messages
-                _messageCount.value = messages.size
-                if (messages.isNotEmpty()) {
-                    _lastCaptureTime.value = messages.firstOrNull()?.timestamp
+            repository.getAllMessages().collect { list ->
+                _allMessages.value = list
+                if (list.isNotEmpty()) {
+                    _lastCaptureTime.value = list.firstOrNull()?.timestamp
                 }
+                recomputeVisible()
             }
         }
 
@@ -91,20 +94,14 @@ class MainViewModel(
     }
 
     fun setSearchQuery(query: String) {
-        if (query.isBlank()) {
-            loadMessages()
-        } else {
-            viewModelScope.launch {
-                repository.searchMessages(query).collect { messages ->
-                    _messages.value = messages
-                }
-            }
-        }
+        _searchQuery.value = query.trim()
+        recomputeVisible()
     }
 
     fun clearAllMessages() {
         viewModelScope.launch {
             repository.clearAllMessages()
+            _allMessages.value = emptyList()
             _messages.value = emptyList()
             _messageCount.value = 0
             _contactNames.value = emptyList()
@@ -137,7 +134,7 @@ class MainViewModel(
             current.add(contact)
         }
         _selectedContacts.value = current
-        applyFilters()
+        recomputeVisible()
     }
 
     fun toggleGroup(group: String) {
@@ -149,7 +146,7 @@ class MainViewModel(
             current.add(group)
         }
         _selectedGroups.value = current
-        applyFilters()
+        recomputeVisible()
     }
 
     fun clearFilter() {
@@ -158,7 +155,7 @@ class MainViewModel(
         _startDate.value = null
         _endDate.value = null
         _showDatePicker.value = false
-        loadMessages()
+        recomputeVisible()
     }
 
     /**
@@ -167,7 +164,7 @@ class MainViewModel(
     fun setDateRange(start: LocalDate?, end: LocalDate?) {
         _startDate.value = start
         _endDate.value = end
-        applyFilters()
+        recomputeVisible()
     }
 
     /**
@@ -176,50 +173,55 @@ class MainViewModel(
     fun clearDateRange() {
         _startDate.value = null
         _endDate.value = null
-        applyFilters()
+        recomputeVisible()
     }
 
     fun showDatePicker(show: Boolean) {
         _showDatePicker.value = show
     }
 
-    private fun applyFilters() {
-        viewModelScope.launch {
-            var allMessages: List<Message> = emptyList()
-            repository.getAllMessages().collect { allMessages = it }
+    private fun recomputeVisible() {
+        val all = _allMessages.value.orEmpty()
+        val contacts = _selectedContacts.value
+        val groups = _selectedGroups.value
+        val startDT = _startDate.value
+        val endDT = _endDate.value
+        val query = _searchQuery.value.lowercase()
 
-            val contactsToFilter = _selectedContacts.value
-            val groupsToFilter = _selectedGroups.value
-            val startDT = _startDate.value
-            val endDT = _endDate.value
-
-            val filtered: List<Message> = allMessages.filter { message ->
-                // Contact filter — use cleaned names for exact match
-                val cleanMsgSender = stripBracketPrefix(message.senderName)
-                val contactMatch = contactsToFilter.isEmpty() || contactsToFilter.contains(cleanMsgSender)
-                // Group filter
-                val groupMatch = groupsToFilter.isEmpty() || groupsToFilter.contains(message.chatName)
-                if (!contactMatch || !groupMatch) return@filter false
-
-                // Date range filter — compare local dates using device timezone
-                if (startDT != null || endDT != null) {
-                    try {
-                        val msgDate = java.time.Instant.ofEpochMilli(message.timestamp)
-                            .atZone(java.time.ZoneId.systemDefault())
-                            .toLocalDate()
-                        if (startDT != null && msgDate.isBefore(startDT)) return@filter false
-                        if (endDT != null && msgDate.isAfter(endDT)) return@filter false
-                    } catch (_: Exception) {
-                        return@filter false
-                    }
-                }
-
-                true
+        val filtered = all.filter { message ->
+            // Search query — case-insensitive substring across content/sender/chat
+            if (query.isNotEmpty()) {
+                val hit = message.content.lowercase().contains(query) ||
+                    message.senderName.lowercase().contains(query) ||
+                    message.chatName.lowercase().contains(query)
+                if (!hit) return@filter false
             }
-            _filteredMessages.value = filtered
-            _messages.value = filtered
-            _messageCount.value = filtered.size
+            // Contact filter — compare cleaned names on both sides
+            val cleanSender = stripBracketPrefix(message.senderName)
+            val contactMatch = contacts.isEmpty() || contacts.contains(cleanSender)
+            // Group filter — compare cleaned names on both sides
+            val cleanChat = stripBracketPrefix(message.chatName)
+            val groupMatch = groups.isEmpty() || groups.contains(cleanChat)
+            if (!contactMatch || !groupMatch) return@filter false
+
+            // Date range filter — compare local dates using device timezone
+            if (startDT != null || endDT != null) {
+                try {
+                    val msgDate = java.time.Instant.ofEpochMilli(message.timestamp)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate()
+                    if (startDT != null && msgDate.isBefore(startDT)) return@filter false
+                    if (endDT != null && msgDate.isAfter(endDT)) return@filter false
+                } catch (_: Exception) {
+                    return@filter false
+                }
+            }
+
+            true
         }
+        _filteredMessages.value = filtered
+        _messages.value = filtered
+        _messageCount.value = filtered.size
     }
 
     fun getMessages(): List<Message> = _messages.value.orEmpty()

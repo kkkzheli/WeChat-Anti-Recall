@@ -92,10 +92,6 @@ class MainActivity : ComponentActivity() {
                     val context = LocalContext.current
 
                     val lastCaptureTimeMs by viewModel.lastCaptureTime.collectAsStateWithLifecycle()
-                    val nlsEnabled by lazy {
-                        val enabled = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
-                        enabled != null && enabled.contains("${context.packageName}/kkkzheli.antirecall.wechat.service.NotificationCaptureService")
-                    }
 
                     AnimatedContent(
                         targetState = currentScreen,
@@ -116,7 +112,6 @@ class MainActivity : ComponentActivity() {
                                         Toast.makeText(applicationContext, "Message deleted", Toast.LENGTH_SHORT).show()
                                     },
                                     lastCaptureTimeMs = lastCaptureTimeMs,
-                                    nlsRegistered = nlsEnabled,
                                 )
                             }
                             Screen.SEARCH -> {

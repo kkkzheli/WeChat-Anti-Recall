@@ -1,33 +1,34 @@
 package kkkzheli.antirecall.wechat.ui.compose
 
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Observer
 import kkkzheli.antirecall.wechat.R
-import androidx.compose.ui.res.stringResource
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.ui.compose.message.MessageCard
-import kkkzheli.antirecall.wechat.util.AccessibilityUtil
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
 /**
@@ -44,7 +45,6 @@ fun MainScreen(
     modifier: Modifier = Modifier,
     onDeleteMessage: (Message) -> Unit = {},
     lastCaptureTimeMs: Long? = null,
-    nlsRegistered: Boolean = false,
 ) {
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var count by remember { mutableIntStateOf(0) }
@@ -55,7 +55,8 @@ fun MainScreen(
     }
 
     val ctx = LocalContext.current
-    val accessibilityEnabled = rememberAccessibilityEnabled(ctx)
+    val permissions = rememberPermissions(ctx)
+    val isRunning = lastCaptureTimeMs != null && (System.currentTimeMillis() - lastCaptureTimeMs) < 5 * 60_000L
 
     Scaffold(
         topBar = {
@@ -69,8 +70,19 @@ fun MainScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.action_filter))
                             if (count > 0) {
-                                Badge(modifier = Modifier.padding(start = 2.dp)) {
-                                    Text(count.toString(), fontSize = 11.sp)
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 2.dp).defaultMinSize(minWidth = 20.dp, minHeight = 20.dp),
+                                ) {
+                                    Text(
+                                        text = count.toString(),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                    )
                                 }
                             }
                         }
@@ -83,26 +95,11 @@ fun MainScreen(
         },
     ) { paddingValues ->
         Column(modifier = modifier.fillMaxSize().padding(paddingValues)) {
-            // Service status banner
-            LastCaptureStatusBanner(
-                context = ctx,
-                lastCaptureTimeMs = lastCaptureTimeMs,
-                nlsRegistered = nlsRegistered,
-                onClick = {
-                    if (!nlsRegistered) {
-                        Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).also {
-                            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            ctx.startActivity(it)
-                        }
-                    }
-                },
-            )
-
-            // Accessibility keep-alive guide
-            AccessibilityGuideBanner(
-                context = ctx,
-                accessibilityEnabled = accessibilityEnabled,
-                nlsRegistered = nlsRegistered,
+            // Status banner: warning when permissions missing, running/granted otherwise
+            StatusBanner(
+                permissions = permissions,
+                isRunning = isRunning,
+                onClick = onNavigateToSettings,
             )
 
             if (messages.isEmpty()) {
@@ -136,44 +133,40 @@ fun MainScreen(
 }
 
 @Composable
-private fun AccessibilityGuideBanner(
-    context: android.content.Context,
-    accessibilityEnabled: Boolean,
-    nlsRegistered: Boolean,
-) {
-    if (!nlsRegistered || accessibilityEnabled) return
+private fun StatusBanner(permissions: PermissionsState, isRunning: Boolean, onClick: () -> Unit) {
+    when {
+        !permissions.allGranted -> PermissionWarningBanner(permissions, onClick)
+        isRunning -> CyanGradientBanner(stringResource(R.string.status_running))
+        else -> CyanGradientBanner(stringResource(R.string.banner_keepalive_enabled))
+    }
+}
 
+@Composable
+private fun PermissionWarningBanner(permissions: PermissionsState, onClick: () -> Unit) {
+    val missing = buildList {
+        if (!permissions.notificationAccess) add(stringResource(R.string.settings_notification_permission))
+        if (!permissions.accessibility) add(stringResource(R.string.settings_accessibility_keepalive))
+        if (!permissions.batteryOptimization) add(stringResource(R.string.settings_battery_optimization))
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f))
-            .clickable { AccessibilityUtil.openSettings(context) }
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.Accessible,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.accessibility_guide_title),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            Text(
-                text = stringResource(R.string.accessibility_guide_desc),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
-            )
-        }
+        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = stringResource(R.string.accessibility_guide_action),
+            text = stringResource(R.string.banner_permission_missing, missing.joinToString("、")),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.permission_needs_open_settings),
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
@@ -182,54 +175,29 @@ private fun AccessibilityGuideBanner(
 }
 
 @Composable
-private fun LastCaptureStatusBanner(context: android.content.Context, lastCaptureTimeMs: Long?, nlsRegistered: Boolean, onClick: () -> Unit) {
-    val now = remember { System.currentTimeMillis() }
-    val show = lastCaptureTimeMs != null && (now - lastCaptureTimeMs) < 5 * 60_000L
-    val shouldShowInfo = !show && !nlsRegistered
-
-    if (show) {
-        // Small green dot in a slim bar
-        Row(
+private fun CyanGradientBanner(text: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0xFF00BCD4), Color(0xFF1565C0))
+                )
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.status_running),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
-    } else if (shouldShowInfo && !nlsRegistered) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(MaterialTheme.colorScheme.error, CircleShape),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.status_needs_permission),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-            )
-        }
+                .size(8.dp)
+                .background(Color.White, CircleShape),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
