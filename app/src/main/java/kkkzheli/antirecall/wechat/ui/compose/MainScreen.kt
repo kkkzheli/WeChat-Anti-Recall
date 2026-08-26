@@ -82,9 +82,9 @@ fun MainScreen(
             TopAppBar(
                 title = { AppTitle(permissions) },
                 actions = {
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.action_search))
-                    }
+                    // Filter is the leftmost action so its count badge at the
+                    // top-left corner has room to grow into the empty space next
+                    // to the title instead of colliding with the neighbouring icon.
                     IconButton(onClick = onNavigateToFilter) {
                         Box {
                             Icon(
@@ -97,8 +97,8 @@ fun MainScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = 8.dp, y = (-6).dp)
+                                        .align(Alignment.TopStart)
+                                        .offset(x = (-8).dp, y = (-6).dp)
                                         .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp),
                                 ) {
                                     Text(
@@ -112,6 +112,9 @@ fun MainScreen(
                                 }
                             }
                         }
+                    }
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.action_search))
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.action_settings))

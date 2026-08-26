@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,6 +42,7 @@ import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.ui.compose.github.GitHubOctocat
 import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
 import kkkzheli.antirecall.wechat.util.AccessibilityUtil
+import kkkzheli.antirecall.wechat.util.PermissionUtil
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,7 +136,7 @@ fun SettingsScreen(
                         Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text(text = stringResource(R.string.settings_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = stringResource(R.string.settings_basic_info), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             val pkgInfo = try { context.packageManager.getPackageInfo(context.packageName, 0) } catch (_: Exception) { null }
                             val vName = pkgInfo?.versionName ?: "?"
                             val vCode = pkgInfo?.versionCode?.toString() ?: "?"
@@ -272,10 +272,7 @@ private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreferenc
 
 @Composable
 private fun BatteryOptimizationRow(context: Context) {
-    val isIgnoring = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-        pm.isIgnoringBatteryOptimizations(context.packageName)
-    } else true
+    val isIgnoring = PermissionUtil.isBatteryOptimizationExempt(context)
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable {
@@ -314,13 +311,9 @@ private fun BatteryOptimizationRow(context: Context) {
 
 @Composable
 private fun AutoStartPermissionRow(context: Context) {
-    val isUnrestricted = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-            pm.isIgnoringBatteryOptimizations(context.packageName)
-        } else true
-    }
-
+    // Auto-start is an OEM-specific permission (MIUI/HyperOS Security Center, etc.)
+    // with no standard API to query, so we never claim it is granted — the badge
+    // stays an honest "manual setup needed" state.
     Card(
         modifier = Modifier.fillMaxWidth().clickable {
             launchAutoStartIntent(context)
@@ -332,12 +325,11 @@ private fun AutoStartPermissionRow(context: Context) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Default.Storage, contentDescription = null, tint = if (isUnrestricted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp)
             Spacer(modifier = Modifier.weight(1f))
-            val statusText = if (isUnrestricted) stringResource(R.string.settings_granted) else stringResource(R.string.settings_not_granted)
-            CapsuleBadge(text = statusText, isError = !isUnrestricted)
+            CapsuleBadge(text = stringResource(R.string.auto_start_manual), neutral = true)
         }
     }
 }
@@ -471,17 +463,33 @@ private fun PermissionCardRow(icon: androidx.compose.ui.graphics.vector.ImageVec
 }
 
 @Composable
-private fun CapsuleBadge(text: String, isError: Boolean = false) {
+private fun CapsuleBadge(text: String, isError: Boolean = false, neutral: Boolean = false) {
+    val bg: Color
+    val fg: Color
+    when {
+        neutral -> {
+            bg = MaterialTheme.colorScheme.tertiaryContainer
+            fg = MaterialTheme.colorScheme.onTertiaryContainer
+        }
+        isError -> {
+            bg = MaterialTheme.colorScheme.errorContainer
+            fg = MaterialTheme.colorScheme.onErrorContainer
+        }
+        else -> {
+            bg = MaterialTheme.colorScheme.primaryContainer
+            fg = MaterialTheme.colorScheme.onPrimaryContainer
+        }
+    }
     Surface(
         shape = RoundedCornerShape(50),
-        color = if (isError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+        color = bg,
         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         Text(
             text = text,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
-            color = if (isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+            color = fg,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
         )
     }

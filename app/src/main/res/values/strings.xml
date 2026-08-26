@@ -94,6 +94,7 @@
     <!-- Auto-start permission -->
     <string name="settings_auto_start">自启动管理</string>
     <string name="auto_start_permission">点击设置</string>
+    <string name="auto_start_manual">需手动开启</string>
     <string name="auto_start_info">允许 Anti Recall 在后台自启动，避免被系统省电策略杀死。</string>
 
     <string name="settings_floating_window">悬浮窗权限</string>
@@ -129,8 +130,9 @@
 
     <!-- Settings about/version -->
     <string name="settings_about_project">Anti Recall 项目</string>
-    <string name="settings_version_info">Anti Recall v%1$s（构建 %2$s）</string>
-    <string name="settings_about_tech">基于 Material Design 3 / Jetpack Compose\n目标 API 34 · minSdk 23</string>
+    <string name="settings_basic_info">基本信息</string>
+    <string name="settings_version_info">Anti Recall v%1$s (Build %2$s)</string>
+    <string name="settings_about_tech">Based on Material Design 3 / Jetpack Compose\nTarget API 34 · minSdk 23</string>
 
     <!-- Date range picker -->
     <string name="next_month">下月</string>

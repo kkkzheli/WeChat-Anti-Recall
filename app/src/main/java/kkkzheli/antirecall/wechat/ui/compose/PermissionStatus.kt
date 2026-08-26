@@ -1,8 +1,6 @@
 package kkkzheli.antirecall.wechat.ui.compose
 
 import android.content.Context
-import android.os.Build
-import android.os.PowerManager
 import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -15,6 +13,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kkkzheli.antirecall.wechat.service.NotificationCaptureService
 import kkkzheli.antirecall.wechat.util.AccessibilityUtil
+import kkkzheli.antirecall.wechat.util.PermissionUtil
 
 data class PermissionsState(
     val notificationAccess: Boolean,
@@ -49,9 +48,6 @@ private fun checkPermissions(context: Context): PermissionsState {
     val nls = (Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
         ?: "").contains("${context.packageName}/${NotificationCaptureService::class.java.name}")
     val accessibility = AccessibilityUtil.isServiceEnabled(context)
-    val battery = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        pm.isIgnoringBatteryOptimizations(context.packageName)
-    } else true
+    val battery = PermissionUtil.isBatteryOptimizationExempt(context)
     return PermissionsState(nls, accessibility, battery)
 }

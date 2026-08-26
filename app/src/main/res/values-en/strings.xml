@@ -94,6 +94,7 @@
     <!-- Auto-start permission -->
     <string name="settings_auto_start">Auto-start Management</string>
     <string name="auto_start_permission">Tap to configure</string>
+    <string name="auto_start_manual">Manual setup</string>
     <string name="auto_start_info">Allow Anti Recall to auto-start in background, preventing battery optimization kills.</string>
 
     <string name="settings_floating_window">Floating Window</string>
@@ -129,7 +130,8 @@
 
     <!-- Settings about/version -->
     <string name="settings_about_project">Anti Recall Project</string>
-    <string name="settings_version_info">Anti Recall v%1$s (build %2$s)</string>
+    <string name="settings_basic_info">Basic Info</string>
+    <string name="settings_version_info">Anti Recall v%1$s (Build %2$s)</string>
     <string name="settings_about_tech">Based on Material Design 3 / Jetpack Compose\nTarget API 34 · minSdk 23</string>
 
     <!-- Date range picker -->
