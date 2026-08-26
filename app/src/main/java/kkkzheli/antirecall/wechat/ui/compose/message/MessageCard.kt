@@ -61,18 +61,28 @@ fun MessageCard(
         enableDismissFromStartToEnd = true,
         enableDismissFromEndToStart = true,
         backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(horizontal = 24.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.delete_message_title),
-                    tint = MaterialTheme.colorScheme.error,
-                )
+            // Reveal the strip only while the card is actually displaced from rest.
+            // Reading requireOffset() also makes this scope recompose live as the card
+            // moves, so the strip can never leak behind a settled bubble. requireOffset()
+            // throws before the first layout (offset is NaN), which we swallow.
+            val displaced = runCatching { kotlin.math.abs(dismissState.requireOffset()) > 1f }.getOrDefault(false)
+            if (displaced) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = RoundedCornerShape(16.dp),
+                        )
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.CenterEnd,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete_message_title),
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         },
         modifier = modifier

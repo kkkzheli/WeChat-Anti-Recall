@@ -24,9 +24,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -79,19 +80,26 @@ fun MainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+                title = { AppTitle(permissions) },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = stringResource(R.string.action_search))
                     }
                     IconButton(onClick = onNavigateToFilter) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.action_filter))
+                        Box {
+                            Icon(
+                                Icons.Default.FilterList,
+                                contentDescription = stringResource(R.string.action_filter),
+                                modifier = Modifier.align(Alignment.Center),
+                            )
                             if (count > 0) {
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
                                     color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(start = 2.dp).defaultMinSize(minWidth = 20.dp, minHeight = 20.dp),
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 8.dp, y = (-6).dp)
+                                        .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp),
                                 ) {
                                     Text(
                                         text = count.toString(),
@@ -99,7 +107,7 @@ fun MainScreen(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         maxLines = 1,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
                                     )
                                 }
                             }
@@ -141,8 +149,15 @@ fun MainScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    items(messages) { message ->
-                        MessageCard(message = message, onClick = {}, onDelete = { msg -> onDeleteMessage(msg) })
+                    items(messages, key = { it.id }) { message ->
+                        MessageCard(
+                            message = message,
+                            onClick = {},
+                            onDelete = { msg ->
+                                onDeleteMessage(msg)
+                                messages = messages.filterNot { it.id == msg.id }
+                            },
+                        )
                     }
                 }
             }
@@ -152,10 +167,10 @@ fun MainScreen(
 
 @Composable
 private fun StatusBanner(permissions: PermissionsState, isRunning: Boolean, onClick: () -> Unit) {
-    when {
-        !permissions.allGranted -> PermissionWarningBanner(permissions, onClick)
-        isRunning -> RunningBanner()
-        else -> AntiRecallTitleBanner()
+    if (!permissions.allGranted) {
+        PermissionWarningBanner(permissions, onClick)
+    } else if (isRunning) {
+        RunningBanner()
     }
 }
 
@@ -184,47 +199,49 @@ private fun RunningBanner() {
 }
 
 @Composable
-private fun AntiRecallTitleBanner() {
+private fun AppTitle(permissions: PermissionsState) {
+    if (permissions.allGranted) {
+        GradientTitle()
+    } else {
+        Text(stringResource(R.string.app_name))
+    }
+}
+
+/**
+ * Seamless looping gradient title. The gradient period equals the title width and
+ * the color sequence starts and ends on the same color, so when [phase] wraps from
+ * 1 back to 0 the pattern is identical — no visible jump.
+ */
+@Composable
+private fun GradientTitle() {
     val transition = rememberInfiniteTransition(label = "titleWave")
     val phase by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2200, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
         label = "phase",
     )
-    var bannerWidth by remember { mutableIntStateOf(0) }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF0B2E4F))
-            .onSizeChanged { bannerWidth = it.width }
-            .padding(vertical = 14.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        val w = bannerWidth.toFloat()
-        val brush = if (w > 0f) {
-            Brush.horizontalGradient(
-                colors = listOf(
-                    Color(0xFF1565C0),
-                    Color(0xFF00E5FF),
-                    Color(0xFF4FC3F7),
-                    Color(0xFF1565C0),
-                ),
-                startX = phase * w * 2f - w,
-                endX = phase * w * 2f + w,
-            )
-        } else {
-            Brush.horizontalGradient(listOf(Color(0xFF00BCD4), Color(0xFF1565C0)))
-        }
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
-                brush = brush,
-            ),
-            color = Color(0xFF00BCD4),
-        )
-    }
+    var titleWidth by remember { mutableStateOf(0f) }
+    val period = titleWidth.coerceAtLeast(1f)
+    val brush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF1565C0),
+            Color(0xFF00E5FF),
+            Color(0xFF4FC3F7),
+            Color(0xFF1565C0),
+        ),
+        start = Offset(phase * period, 0f),
+        end = Offset(phase * period + period, 0f),
+        tileMode = TileMode.Repeated,
+    )
+    Text(
+        text = stringResource(R.string.app_name),
+        style = MaterialTheme.typography.titleLarge.copy(
+            fontWeight = FontWeight.ExtraBold,
+            brush = brush,
+        ),
+        onTextLayout = { result -> titleWidth = result.size.width.toFloat() },
+    )
 }
 
 @Composable

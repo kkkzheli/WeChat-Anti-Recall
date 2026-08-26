@@ -1,6 +1,6 @@
 package kkkzheli.antirecall.wechat.ui.compose.filter
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -66,7 +66,7 @@ fun FilterScreen(
                 .padding(16.dp)
         ) {
             // Active filters
-            if (selectedContacts.isNotEmpty() || selectedGroups.isNotEmpty() || startDate != null) {
+            if (selectedContacts.isNotEmpty() || selectedGroups.isNotEmpty() || startDate != null || endDate != null) {
                 Text(text = stringResource(R.string.filter_active_title), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 8.dp))
                 SelectedChips(
                     items = buildList {
@@ -137,8 +137,7 @@ fun FilterScreen(
         DateRangePickerDialog(
             currentStart = startDate,
             currentEnd = endDate,
-            onStartDateChanged = { s -> viewModel.setDateRange(s, endDate); viewModel.showDatePicker(false) },
-            onEndDateChanged = { e -> viewModel.setDateRange(startDate, e); viewModel.showDatePicker(false) },
+            onConfirm = { s, e -> viewModel.setDateRange(s, e) },
             onDismiss = { viewModel.showDatePicker(false) },
         )
     }
@@ -197,11 +196,11 @@ private fun FilterChipRow(
             val bg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             val fg = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             val border = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-            Card(
+            Surface(
                 onClick = { onToggle(item) },
-                colors = CardDefaults.cardColors(containerColor = bg),
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.border(width = 1.dp, color = border, shape = RoundedCornerShape(16.dp))
+                color = bg,
+                border = BorderStroke(1.dp, border),
             ) {
                 Text(text = item, color = fg, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }

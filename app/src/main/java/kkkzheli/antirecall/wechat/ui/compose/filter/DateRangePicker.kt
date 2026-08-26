@@ -36,8 +36,7 @@ private fun getDayAbbreviations(): List<String> {
 fun DateRangePickerDialog(
     currentStart: LocalDate? = null,
     currentEnd: LocalDate? = null,
-    onStartDateChanged: (LocalDate?) -> Unit,
-    onEndDateChanged: (LocalDate?) -> Unit,
+    onConfirm: (LocalDate, LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val today = LocalDate.now()
@@ -47,8 +46,7 @@ fun DateRangePickerDialog(
     var endYM by remember { mutableStateOf(YearMonth.from(tempEnd)) }
 
     fun commit() {
-        onStartDateChanged(tempStart)
-        onEndDateChanged(tempEnd)
+        onConfirm(tempStart, tempEnd)
         onDismiss()
     }
 
