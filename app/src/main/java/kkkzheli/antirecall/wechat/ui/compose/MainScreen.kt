@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Observer
@@ -98,6 +99,7 @@ fun MainScreen(
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier
                                         .align(Alignment.TopStart)
+                                        .wrapContentSize(unbounded = true)
                                         .offset(x = (-8).dp, y = (-6).dp)
                                         .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp),
                                 ) {
@@ -107,6 +109,7 @@ fun MainScreen(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         maxLines = 1,
+                                        overflow = TextOverflow.Visible,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
                                     )
                                 }

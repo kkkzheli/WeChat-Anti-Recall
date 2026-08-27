@@ -97,7 +97,6 @@
     <string name="auto_start_manual">Manual setup</string>
     <string name="auto_start_info">Allow Anti Recall to auto-start in background, preventing battery optimization kills.</string>
 
-    <string name="settings_floating_window">Floating Window</string>
     <string name="filter_screen_title">Filter</string>
     <string name="filter_clear_all_desc">Clear all filters</string>
     <string name="filter_back_desc">Back</string>

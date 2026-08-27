@@ -97,7 +97,6 @@
     <string name="auto_start_manual">需手动开启</string>
     <string name="auto_start_info">允许 Anti Recall 在后台自启动，避免被系统省电策略杀死。</string>
 
-    <string name="settings_floating_window">悬浮窗权限</string>
     <string name="filter_screen_title">筛选</string>
     <string name="filter_clear_all_desc">清除所有筛选条件</string>
     <string name="filter_back_desc">返回上一页</string>

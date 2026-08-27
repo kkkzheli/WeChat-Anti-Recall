@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Warning
@@ -35,6 +34,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import kkkzheli.antirecall.wechat.App
@@ -42,6 +44,7 @@ import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.ui.compose.github.GitHubOctocat
 import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
 import kkkzheli.antirecall.wechat.util.AccessibilityUtil
+import kkkzheli.antirecall.wechat.util.AutoStartUtil
 import kkkzheli.antirecall.wechat.util.PermissionUtil
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 
@@ -181,24 +184,6 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AccessibilityKeepAliveRow(context)
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    PermissionCardRow(
-                        icon = Icons.Default.PhoneAndroid,
-                        title = stringResource(R.string.settings_floating_window),
-                        status = stringResource(R.string.settings_granted),
-                        isEnabled = true,
-                        onClick = {
-                            try {
-                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                    data = Uri.parse("package:${context.packageName}")
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                context.startActivity(intent)
-                            } catch (_: Exception) {}
-                        },
-                    )
                 }
             }
 
@@ -311,9 +296,17 @@ private fun BatteryOptimizationRow(context: Context) {
 
 @Composable
 private fun AutoStartPermissionRow(context: Context) {
-    // Auto-start is an OEM-specific permission (MIUI/HyperOS Security Center, etc.)
-    // with no standard API to query, so we never claim it is granted — the badge
-    // stays an honest "manual setup needed" state.
+    val state = rememberAutoStartState(context)
+    val statusText = when (state) {
+        AutoStartUtil.State.ENABLED -> stringResource(R.string.settings_granted)
+        AutoStartUtil.State.DISABLED -> stringResource(R.string.settings_not_granted)
+        AutoStartUtil.State.UNKNOWN -> stringResource(R.string.auto_start_manual)
+    }
+    val iconTint = when (state) {
+        AutoStartUtil.State.ENABLED -> MaterialTheme.colorScheme.primary
+        AutoStartUtil.State.DISABLED -> MaterialTheme.colorScheme.onSurfaceVariant
+        AutoStartUtil.State.UNKNOWN -> MaterialTheme.colorScheme.tertiary
+    }
     Card(
         modifier = Modifier.fillMaxWidth().clickable {
             launchAutoStartIntent(context)
@@ -325,13 +318,34 @@ private fun AutoStartPermissionRow(context: Context) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.Storage, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Text(text = stringResource(R.string.settings_auto_start), fontSize = 14.sp)
             Spacer(modifier = Modifier.weight(1f))
-            CapsuleBadge(text = stringResource(R.string.auto_start_manual), neutral = true)
+            CapsuleBadge(
+                text = statusText,
+                isError = state == AutoStartUtil.State.DISABLED,
+                neutral = state == AutoStartUtil.State.UNKNOWN,
+            )
         }
     }
+}
+
+/** Auto-start state, re-checked on resume so it flips after the user grants/revokes it. */
+@Composable
+private fun rememberAutoStartState(context: Context): AutoStartUtil.State {
+    var state by remember { mutableStateOf(AutoStartUtil.detect(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                state = AutoStartUtil.detect(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    return state
 }
 
 @Composable

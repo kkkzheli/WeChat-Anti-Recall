@@ -3,17 +3,37 @@ package kkkzheli.antirecall.wechat.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import kkkzheli.antirecall.wechat.service.KeepAliveService
 import kkkzheli.antirecall.wechat.service.NotificationCaptureService
+import kkkzheli.antirecall.wechat.util.AutoStartUtil
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED,
-            Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                context.startService(Intent(context, NotificationCaptureService::class.java))
-                context.startService(Intent(context, KeepAliveService::class.java))
+            Intent.ACTION_BOOT_COMPLETED -> {
+                // MIUI/HyperOS only delivers BOOT_COMPLETED to apps on the
+                // auto-start whitelist — record receipt as a detection signal.
+                AutoStartUtil.markBootConfirmed(context)
+                startDaemon(context)
             }
+            Intent.ACTION_MY_PACKAGE_REPLACED -> {
+                startDaemon(context)
+            }
+        }
+    }
+
+    private fun startDaemon(context: Context) {
+        try {
+            val nls = Intent(context, NotificationCaptureService::class.java)
+            val daemon = Intent(context, KeepAliveService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(daemon)
+            } else {
+                context.startService(nls)
+                context.startService(daemon)
+            }
+        } catch (_: Exception) {
         }
     }
 }

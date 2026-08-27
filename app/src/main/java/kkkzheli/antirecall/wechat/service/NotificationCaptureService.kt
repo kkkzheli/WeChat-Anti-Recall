@@ -3,6 +3,7 @@ package kkkzheli.antirecall.wechat.service
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -43,11 +44,26 @@ class NotificationCaptureService : NotificationListenerService() {
     override fun onListenerConnected() {
         _listenerConnected = true
         Log.i(TAG, "===== Listener connected! Service is now active =====")
+        // The notification listener binding is a keep-alive anchor too — bring up
+        // the foreground daemon so the whole chain runs off any granted anchor.
+        startKeepAliveService()
     }
 
     override fun onListenerDisconnected() {
         Log.e(TAG, "===== Listener DISCONNECTED =====")
         _listenerConnected = false
+    }
+
+    private fun startKeepAliveService() {
+        try {
+            val intent = Intent(this, KeepAliveService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } catch (_: Exception) {
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {

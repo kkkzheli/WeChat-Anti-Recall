@@ -73,14 +73,21 @@ fun MessageCard(
                         .background(
                             color = MaterialTheme.colorScheme.errorContainer,
                             shape = RoundedCornerShape(16.dp),
-                        )
-                        .padding(horizontal = 24.dp),
-                    contentAlignment = Alignment.CenterEnd,
+                        ),
                 ) {
+                    // Trash icon on both sides: right for end-to-start swipes,
+                    // left for start-to-end swipes.
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = stringResource(R.string.delete_message_title),
                         tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.CenterStart).padding(start = 24.dp),
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete_message_title),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 24.dp),
                     )
                 }
             }
