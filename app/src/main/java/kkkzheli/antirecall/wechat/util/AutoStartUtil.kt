@@ -7,35 +7,22 @@ object AutoStartUtil {
 
     enum class State { ENABLED, DISABLED, UNKNOWN }
 
-    private const val PREF_NAME = "auto_start_detect"
-    private const val KEY_BOOT_CONFIRMED_MS = "boot_confirmed_ms"
-
     /**
      * Best-effort auto-start state.
      *
-     * Primary: on Xiaomi devices we reflect into MIUI/HyperOS's hidden
-     * AppOpsUtils.getApplicationAutoStart(context, pkg) which returns
-     * 0 = enabled, 1 = disabled. It fails gracefully (ClassNotFoundException
-     * or SecurityException) into UNKNOWN.
-     *
-     * Fallback: a reboot-confirmed flag — MIUI/HyperOS only delivers
-     * BOOT_COMPLETED to apps in the auto-start whitelist, so a recent boot
-     * receipt proves the permission is actually working.
+     * We reflect into MIUI/HyperOS's hidden AppOpsUtils.getApplicationAutoStart
+     * which returns 0 = enabled, 1 = disabled. On MIUI 11-14 this works and
+     * reports the real toggle. On HyperOS the class survives as an empty stub,
+     * so the reflection fails and we return UNKNOWN rather than guess — a false
+     * "granted" is worse than an honest "can't tell" (the row tap opens the real
+     * auto-start screen for manual confirmation).
      */
     fun detect(context: Context): State {
         if (isXiaomi()) {
             val direct = detectViaAppOpsUtils(context)
             if (direct != State.UNKNOWN) return direct
         }
-        return if (bootConfirmed(context)) State.ENABLED else State.UNKNOWN
-    }
-
-    /** Called by the boot receiver when BOOT_COMPLETED actually arrives. */
-    fun markBootConfirmed(context: Context) {
-        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putLong(KEY_BOOT_CONFIRMED_MS, System.currentTimeMillis())
-            .apply()
+        return State.UNKNOWN
     }
 
     private fun detectViaAppOpsUtils(context: Context): State {
@@ -55,11 +42,6 @@ object AutoStartUtil {
         } catch (_: Exception) {
             State.UNKNOWN
         }
-    }
-
-    private fun bootConfirmed(context: Context): Boolean {
-        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .getLong(KEY_BOOT_CONFIRMED_MS, 0L) > 0L
     }
 
     private fun isXiaomi(): Boolean {
