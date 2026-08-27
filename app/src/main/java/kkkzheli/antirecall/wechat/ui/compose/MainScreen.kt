@@ -81,40 +81,34 @@ fun MainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { AppTitle(permissions) },
-                actions = {
-                    // Filter is the leftmost action so its count badge at the
-                    // top-left corner has room to grow into the empty space next
-                    // to the title instead of colliding with the neighbouring icon.
-                    IconButton(onClick = onNavigateToFilter) {
-                        Box {
-                            Icon(
-                                Icons.Default.FilterList,
-                                contentDescription = stringResource(R.string.action_filter),
-                                modifier = Modifier.align(Alignment.Center),
-                            )
-                            if (count > 0) {
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .wrapContentSize(unbounded = true)
-                                        .offset(x = (-8).dp, y = (-6).dp)
-                                        .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp),
-                                ) {
-                                    Text(
-                                        text = count.toString(),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Visible,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                                    )
-                                }
+                title = {
+                    // The count pill lives next to the title (screen top-left), not
+                    // as an overlay on the filter icon — there it has the whole top
+                    // bar to grow and can never be squeezed by neighbouring icons.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AppTitle(permissions)
+                        if (count > 0) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                            ) {
+                                Text(
+                                    text = count.toString(),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                )
                             }
                         }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToFilter) {
+                        Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.action_filter))
                     }
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = stringResource(R.string.action_search))

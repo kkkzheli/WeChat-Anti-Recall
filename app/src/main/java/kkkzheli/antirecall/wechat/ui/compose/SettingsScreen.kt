@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.R
+import kkkzheli.antirecall.wechat.service.NotificationCaptureService
 import kkkzheli.antirecall.wechat.ui.compose.github.GitHubOctocat
 import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
 import kkkzheli.antirecall.wechat.util.AccessibilityUtil
@@ -158,10 +159,7 @@ fun SettingsScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = stringResource(R.string.settings_permission_status), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
 
-                    val nlsEnabled by lazy {
-                        val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
-                        enabled != null && enabled.contains("${context.packageName}/kkkzheli.antirecall.wechat.service.NotificationCaptureService")
-                    }
+                    val nlsEnabled = rememberNotificationAccessState(context)
 
                     PermissionCardRow(
                         icon = Icons.Default.Notifications,
@@ -257,7 +255,7 @@ private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreferenc
 
 @Composable
 private fun BatteryOptimizationRow(context: Context) {
-    val isIgnoring = PermissionUtil.isBatteryOptimizationExempt(context)
+    val isIgnoring = rememberBatteryOptimizationState(context)
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable {
@@ -346,6 +344,44 @@ private fun rememberAutoStartState(context: Context): AutoStartUtil.State {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     return state
+}
+
+/** Notification-access state, re-checked on resume so it flips after the user grants/revokes it. */
+@Composable
+private fun rememberNotificationAccessState(context: Context): Boolean {
+    var enabled by remember { mutableStateOf(isNotificationAccessEnabled(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                enabled = isNotificationAccessEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    return enabled
+}
+
+private fun isNotificationAccessEnabled(context: Context): Boolean {
+    val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+    return enabled != null && enabled.contains("${context.packageName}/${NotificationCaptureService::class.java.name}")
+}
+
+@Composable
+private fun rememberBatteryOptimizationState(context: Context): Boolean {
+    var exempt by remember { mutableStateOf(PermissionUtil.isBatteryOptimizationExempt(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                exempt = PermissionUtil.isBatteryOptimizationExempt(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    return exempt
 }
 
 @Composable
