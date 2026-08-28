@@ -1,5 +1,6 @@
 package kkkzheli.antirecall.wechat.ui.compose.filter
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -121,8 +122,22 @@ private fun MiniCalendar(
                     val fg = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
                     else if (isDisabled(cell.date, selectedDate, minDate, maxDate)) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                     else MaterialTheme.colorScheme.onSurface
-                    Surface(shape = RoundedCornerShape(50.dp), color = bg, modifier = Modifier.defaultMinSize(minHeight = 28.dp, minWidth = 28.dp)) {
-                        Text(text = cell.date.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = fg, modifier = Modifier.padding(4.dp))
+                    // Plain Box + background instead of Surface: M3 Surface
+                    // top-start-aligns its content, which pushed the day number
+                    // into the top-left of the selection pill. Center it instead.
+                    Box(
+                        modifier = Modifier
+                            .defaultMinSize(minWidth = 28.dp, minHeight = 28.dp)
+                            .background(color = bg, shape = RoundedCornerShape(50.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = cell.date.dayOfMonth.toString(),
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = fg,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
                     }
                 }
             }

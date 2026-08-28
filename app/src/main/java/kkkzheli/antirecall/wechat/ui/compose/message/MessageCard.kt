@@ -134,25 +134,42 @@ fun MessageCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (message.isGroup) {
-                        Row(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .background(cardColors.groupAccent, RoundedCornerShape(4.dp)),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            Text(text = stringResource(R.string.msg_group_badge), fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                if (message.isGroup && message.chatName.isNotEmpty()) {
+                    // Group record: line 1 group name (bold), line 2 sender
+                    // nickname (absent on group system notices), line 3 content.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        GroupBadge(cardColors.groupAccent)
                         Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = message.chatName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = cardColors.senderColor,
+                            maxLines = 1,
+                        )
                     }
-                    Text(
-                        text = message.senderName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = cardColors.senderColor,
-                        maxLines = 1,
-                    )
+                    if (message.senderName.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(1.dp))
+                        Text(
+                            text = message.senderName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = cardColors.senderColor.copy(alpha = 0.72f),
+                            maxLines = 1,
+                        )
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (message.isGroup) {
+                            GroupBadge(cardColors.groupAccent)
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+                        Text(
+                            text = message.senderName,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = cardColors.senderColor,
+                            maxLines = 1,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(3.dp))
@@ -178,6 +195,19 @@ fun MessageCard(
             }
         }
         }
+    }
+}
+
+@Composable
+private fun GroupBadge(accent: Color) {
+    Row(
+        modifier = Modifier
+            .size(16.dp)
+            .background(accent, RoundedCornerShape(4.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Text(text = stringResource(R.string.msg_group_badge), fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
     }
 }
 

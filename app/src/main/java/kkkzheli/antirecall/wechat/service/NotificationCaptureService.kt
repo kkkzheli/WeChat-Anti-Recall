@@ -111,9 +111,8 @@ class NotificationCaptureService : NotificationListenerService() {
             return
         }
 
-        val (senderName, messageText) = extractSenderAndContent(contentTitle, contentText)
-        val isGroup = senderName.contains("群") || senderName.contains("Group")
-        val chatName = if (isGroup) senderName else ""
+        val (isGroup, chatName, senderName, messageText) = parseWeChatNotification(contentTitle, contentText)
+        Log.d(TAG, "  Parsed: group=$isGroup chat='$chatName' sender='$senderName'")
 
         val specialInfo = specialDetector.detect(contentTitle, messageText)
         val isSpecial = specialInfo != null
@@ -170,40 +169,60 @@ class NotificationCaptureService : NotificationListenerService() {
         return text.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
     }
 
+    private data class ParsedNotification(
+        val isGroup: Boolean,
+        val chatName: String,
+        val senderName: String,
+        val content: String,
+    )
+
     /**
-     * Extract sender name and message content from WeChat notification text.
-     * Format: [N]/[N条]/(none) + senderName + (:|：|、) + messageContent
-     * Returns Pair(senderName, content). If no separator found, title holds sender and text is content.
+     * Parse WeChat notification formats (com.tencent.mm):
+     *  - Single chat: title = contact name, text = bare message content.
+     *  - Group chat:  title = group name,   text = "sender nickname: content".
+     *  - Both may carry an "[N]"/"[N条]" unread-count prefix on the text.
+     *
+     * A group message is therefore recognized two ways: the title itself looks
+     * like a group name (contains 群/Group — also covers group system notices,
+     * which have no sender prefix), or the text carries a "name: " prefix whose
+     * name differs from the title (catches groups whose name lacks 群).
      */
-    private fun extractSenderAndContent(title: String, text: String): Pair<String, String> {
-        val firstLine = text.trim().lineSequence().firstOrNull().orEmpty()
-        val stripped = stripBracketPrefix(firstLine).trim()
+    private fun parseWeChatNotification(rawTitle: String, rawText: String): ParsedNotification {
+        val title = stripBracketPrefix(rawTitle.trim()).trim()
+        val stripped = stripBracketPrefix(rawText.trim())
+        val firstLine = stripped.lineSequence().firstOrNull().orEmpty().trim()
 
-        val sepPos = findFirstSeparatorPos(stripped)
+        val sepPos = findFirstSeparatorPos(firstLine)
+        val sender = if (sepPos > 0 && sepPos < 60) firstLine.substring(0, sepPos).trim() else ""
 
-        val sender = if (sepPos > 0 && sepPos < 60) {
-            stripped.substring(0, sepPos).trim()
-        } else {
-            // No separator — single message; title holds sender, text IS the content
-            return stripBracketPrefix(title).trim() to stripped
+        val titleLooksGroup = title.contains("群") || title.contains("Group", ignoreCase = true)
+        val hasSenderPrefix = sender.isNotEmpty() && !sender.equals(title, ignoreCase = true)
+
+        return when {
+            titleLooksGroup -> ParsedNotification(
+                isGroup = true,
+                chatName = title,
+                senderName = sender,
+                content = if (sepPos > 0) stripped.substring(sepPos + 1).trim() else stripped,
+            )
+            hasSenderPrefix -> ParsedNotification(
+                isGroup = true,
+                chatName = title,
+                senderName = sender,
+                content = stripped.substring(sepPos + 1).trim(),
+            )
+            else -> ParsedNotification(
+                isGroup = false,
+                chatName = "",
+                senderName = title,
+                content = stripped,
+            )
         }
-
-        val content = if (sepPos > 0 && sepPos < stripped.length) {
-            stripped.substring(sepPos + 1).trim()
-        } else {
-            ""
-        }
-
-        // Sanity checks
-        if (sender.isEmpty() || sender.length > 60) {
-            return stripBracketPrefix(title).trim() to content
-        }
-        return sender to content
     }
 
     private fun findFirstSeparatorPos(text: String): Int {
         var minPos = -1
-        listOf('：', ':', '、').forEach { sep ->
+        listOf('：', ':').forEach { sep ->
             val pos = text.indexOf(sep)
             if (pos > 0 && (minPos < 0 || pos < minPos)) {
                 minPos = pos
