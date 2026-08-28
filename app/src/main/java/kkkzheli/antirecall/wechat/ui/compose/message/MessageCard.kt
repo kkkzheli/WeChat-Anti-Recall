@@ -13,6 +13,9 @@ import androidx.compose.material.icons.filled.LocalMall
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +32,10 @@ import kkkzheli.antirecall.wechat.ui.theme.RedPacketRed
 import kkkzheli.antirecall.wechat.ui.theme.TransferOrange
 import kkkzheli.antirecall.wechat.ui.theme.VoiceCallGreen
 import kkkzheli.antirecall.wechat.ui.theme.VideoCallPurple
+
+/** Shared shapes, hoisted so composing a row during a fling allocates none. */
+private val BubbleShape = RoundedCornerShape(16.dp)
+private val BadgeShape = RoundedCornerShape(5.dp)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,17 +64,22 @@ fun MessageCard(
         enableDismissFromEndToStart = true,
         backgroundContent = {
             // Reveal the strip only while the card is actually displaced from rest.
-            // Reading requireOffset() also makes this scope recompose live as the card
-            // moves, so the strip can never leak behind a settled bubble. requireOffset()
+            // derivedStateOf collapses the per-frame offset reads to the boolean
+            // flips, so dragging recomposes nothing until the strip appears or
+            // disappears — it can never leak behind a settled bubble. requireOffset()
             // throws before the first layout (offset is NaN), which we swallow.
-            val displaced = runCatching { kotlin.math.abs(dismissState.requireOffset()) > 1f }.getOrDefault(false)
+            val displaced by remember(dismissState) {
+                derivedStateOf {
+                    runCatching { kotlin.math.abs(dismissState.requireOffset()) > 1f }.getOrDefault(false)
+                }
+            }
             if (displaced) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
                             color = MaterialTheme.colorScheme.errorContainer,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = BubbleShape,
                         ),
                 ) {
                     // Trash icon on both sides: right for end-to-start swipes,
@@ -97,12 +109,12 @@ fun MessageCard(
             // Flat bubbles: any elevation draws a shadow slab that reads as a
             // separate rectangle beneath the bubble. Must stay at an explicit 0.
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = BubbleShape,
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(BubbleShape)
                     .clickable { onClick(message) }
                     .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -205,9 +217,9 @@ private fun GroupBadge() {
         fontWeight = FontWeight.Black,
         maxLines = 1,
         modifier = Modifier
-            .clip(RoundedCornerShape(5.dp))
+            .clip(BadgeShape)
             .background(GroupBadgeBlue)
-            .border(1.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(5.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.9f), BadgeShape)
             .padding(horizontal = 4.dp, vertical = 2.dp),
     )
 }

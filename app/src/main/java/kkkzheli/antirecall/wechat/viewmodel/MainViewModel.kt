@@ -4,8 +4,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.repository.MessageRepository
@@ -60,13 +62,18 @@ class MainViewModel(
     private val _lastCaptureTime = MutableStateFlow<Long?>(null)
     val lastCaptureTime: StateFlow<Long?> = _lastCaptureTime
 
+    // Compiled once at class level — reused by every stripBracketPrefix call.
+    // Declared above init: loadMessages() starts collectors that call
+    // stripBracketPrefix, so the regex must exist before any of them runs.
+    private val BRACKET_PREFIX = Regex("^\\[[^\\]]+\\]\\s*")
+
     init {
         loadMessages()
     }
 
     private fun loadMessages() {
         viewModelScope.launch {
-            repository.getAllMessages().collect { list ->
+            repository.getAllMessages().flowOn(Dispatchers.Default).collect { list ->
                 _allMessages.value = list
                 if (list.isNotEmpty()) {
                     _lastCaptureTime.value = list.firstOrNull()?.timestamp
@@ -76,13 +83,13 @@ class MainViewModel(
         }
 
         viewModelScope.launch {
-            repository.getContactNames().collect { names ->
+            repository.getContactNames().flowOn(Dispatchers.Default).collect { names ->
                 _contactNames.value = names.map(::stripBracketPrefix).sortedBy { it.lowercase() }
             }
         }
 
         viewModelScope.launch {
-            repository.getGroupNames().collect { names ->
+            repository.getGroupNames().flowOn(Dispatchers.Default).collect { names ->
                 _groupNames.value = names.map(::stripBracketPrefix).sortedBy { it.lowercase() }
             }
         }
@@ -90,7 +97,7 @@ class MainViewModel(
 
     /** Strip any [...] prefix, e.g. [3], [3条], [3条消息]. */
     private fun stripBracketPrefix(name: String): String {
-        return name.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
+        return name.replace(BRACKET_PREFIX, "").trim()
     }
 
     fun setSearchQuery(query: String) {
@@ -196,12 +203,10 @@ class MainViewModel(
                     message.chatName.lowercase().contains(query)
                 if (!hit) return@filter false
             }
-            // Contact filter — compare cleaned names on both sides
-            val cleanSender = stripBracketPrefix(message.senderName)
-            val contactMatch = contacts.isEmpty() || contacts.contains(cleanSender)
+            // Contact filter — compare cleaned names on both sides (|| short-circuits, so no filter = no regex work)
+            val contactMatch = contacts.isEmpty() || contacts.contains(stripBracketPrefix(message.senderName))
             // Group filter — compare cleaned names on both sides
-            val cleanChat = stripBracketPrefix(message.chatName)
-            val groupMatch = groups.isEmpty() || groups.contains(cleanChat)
+            val groupMatch = groups.isEmpty() || groups.contains(stripBracketPrefix(message.chatName))
             if (!contactMatch || !groupMatch) return@filter false
 
             // Date range filter — compare local dates using device timezone

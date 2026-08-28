@@ -26,12 +26,15 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,12 +61,21 @@ fun MainScreen(
     onDeleteMessage: (Message) -> Unit = {},
     lastCaptureTimeMs: Long? = null,
 ) {
-    var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    var count by remember { mutableIntStateOf(0) }
+    // Seed from the current LiveData values so the first frame already has data.
+    // observeForever has no lifecycle owner, so the observers are removed manually
+    // on dispose instead of leaking past this screen.
+    var messages by remember { mutableStateOf(viewModel.getMessages()) }
+    var count by remember { mutableIntStateOf(viewModel.messageCount.value ?: 0) }
 
-    LaunchedEffect(Unit) {
-        viewModel.messages.observeForever { list -> messages = list ?: emptyList() }
-        viewModel.messageCount.observeForever { c -> count = c ?: 0 }
+    DisposableEffect(Unit) {
+        val messagesObserver = Observer<List<Message>> { list -> messages = list ?: emptyList() }
+        val countObserver = Observer<Int> { c -> count = c ?: 0 }
+        viewModel.messages.observeForever(messagesObserver)
+        viewModel.messageCount.observeForever(countObserver)
+        onDispose {
+            viewModel.messages.removeObserver(messagesObserver)
+            viewModel.messageCount.removeObserver(countObserver)
+        }
     }
 
     val listState = rememberLazyListState()
@@ -95,7 +107,12 @@ fun MainScreen(
             delay(30_000)
         }
     }
-    val isRunning = lastCaptureTimeMs != null && (now - lastCaptureTimeMs) < 5 * 60_000L
+    // `now` is read only inside the derived calc, so the 30s heartbeat tick
+    // re-evaluates just this flag — the banner recomposes only when it flips.
+    val isRunning by remember(lastCaptureTimeMs) {
+        val started = lastCaptureTimeMs
+        derivedStateOf { started != null && (now - started) < 5 * 60_000L }
+    }
 
     Scaffold(
         topBar = {
@@ -169,7 +186,17 @@ fun MainScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    items(messages, key = { it.id }) { message ->
+                    items(
+                        messages,
+                        key = { it.id },
+                        contentType = { msg ->
+                            when {
+                                msg.isSpecial -> "special"
+                                msg.chatName.isNotEmpty() -> "group"
+                                else -> "personal"
+                            }
+                        },
+                    ) { message ->
                         MessageCard(
                             message = message,
                             onClick = {},
@@ -227,10 +254,23 @@ private fun AppTitle(permissions: PermissionsState) {
     }
 }
 
+/** Colors of the title gradient; first and last match so the repeated tile wraps seamlessly. */
+private val TitleGradientColors = listOf(
+    Color(0xFF1565C0),
+    Color(0xFF00E5FF),
+    Color(0xFF4FC3F7),
+    Color(0xFF1565C0),
+)
+
 /**
- * Seamless looping gradient title. The gradient period equals the title width and
- * the color sequence starts and ends on the same color, so when [phase] wraps from
- * 1 back to 0 the pattern is identical — no visible jump.
+ * Seamless looping gradient title, animated entirely in the draw phase. The text
+ * is painted [Color.Transparent] and the gradient is drawn over it inside
+ * [Modifier.drawWithCache], where [phase] is read within the draw scope — so each
+ * animation tick only invalidates drawing, never recomposition, and the captured
+ * [TextLayoutResult] is cached instead of being rebuilt every frame. The gradient
+ * period equals the title width and the color sequence starts and ends on the
+ * same color, so when phase wraps from 1 back to 0 the pattern is identical —
+ * no visible jump.
  */
 @Composable
 private fun GradientTitle() {
@@ -241,26 +281,30 @@ private fun GradientTitle() {
         animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
         label = "phase",
     )
-    var titleWidth by remember { mutableStateOf(0f) }
-    val period = titleWidth.coerceAtLeast(1f)
-    val brush = Brush.linearGradient(
-        colors = listOf(
-            Color(0xFF1565C0),
-            Color(0xFF00E5FF),
-            Color(0xFF4FC3F7),
-            Color(0xFF1565C0),
-        ),
-        start = Offset(phase * period, 0f),
-        end = Offset(phase * period + period, 0f),
-        tileMode = TileMode.Repeated,
-    )
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     Text(
         text = stringResource(R.string.app_name),
         style = MaterialTheme.typography.titleLarge.copy(
             fontWeight = FontWeight.ExtraBold,
-            brush = brush,
+            color = Color.Transparent,
         ),
-        onTextLayout = { result -> titleWidth = result.size.width.toFloat() },
+        onTextLayout = { result -> layout = result },
+        modifier = Modifier.drawWithCache {
+            val result = layout ?: return@drawWithCache onDrawBehind { }
+            val period = result.size.width.toFloat().coerceAtLeast(1f)
+            onDrawWithContent {
+                drawContent()
+                drawText(
+                    result,
+                    brush = Brush.linearGradient(
+                        TitleGradientColors,
+                        start = Offset(phase * period, 0f),
+                        end = Offset(phase * period + period, 0f),
+                        tileMode = TileMode.Repeated,
+                    ),
+                )
+            }
+        },
     )
 }
 
