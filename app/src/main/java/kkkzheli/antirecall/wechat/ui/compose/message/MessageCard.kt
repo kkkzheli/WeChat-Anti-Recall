@@ -25,7 +25,6 @@ import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.model.SpecialType
 import kkkzheli.antirecall.wechat.ui.theme.GroupBadgeBlue
-import kkkzheli.antirecall.wechat.ui.theme.GroupSkyBlue
 import kkkzheli.antirecall.wechat.ui.theme.RedPacketRed
 import kkkzheli.antirecall.wechat.ui.theme.TransferOrange
 import kkkzheli.antirecall.wechat.ui.theme.VoiceCallGreen
@@ -193,8 +192,8 @@ fun MessageCard(
 
 /**
  * Group marker: a solid deep-blue chip with a white ring and heavy glyph,
- * independent of the theme accent — it must stay loud on the sky-blue
- * group bubble in both light and dark schemes. Wraps its own width so the
+ * independent of the theme accent — the badge alone marks a group bubble,
+ * since its background matches personal bubbles. Wraps its own width so the
  * localized word fits in every locale ("群", "Group", "群組").
  */
 @Composable
@@ -227,14 +226,8 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
                 null -> defaultPersonalColors(scheme)
             }
         }
-        message.chatName.isNotEmpty() && message.senderName != message.chatName -> {
-            MessageCardColors(
-                containerColor = GroupSkyBlue,
-                timestampColor = scheme.onSurfaceVariant,
-                senderColor = scheme.onSurface,
-                contentColor = scheme.onSurface,
-            )
-        }
+        // Group bubbles use the same container color as personal ones — the
+        // blue 群 badge is what marks a group, not the bubble background.
         else -> defaultPersonalColors(scheme)
     }
 }
