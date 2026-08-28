@@ -3,7 +3,6 @@ package kkkzheli.antirecall.wechat.ui.compose.message
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,7 +13,6 @@ import androidx.compose.material.icons.filled.LocalMall
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,9 +31,6 @@ import kkkzheli.antirecall.wechat.ui.theme.TransferOrange
 import kkkzheli.antirecall.wechat.ui.theme.VoiceCallGreen
 import kkkzheli.antirecall.wechat.ui.theme.VideoCallPurple
 
-/** Every bubble's container is drawn at this opacity over the screen background. */
-private const val BUBBLE_OPACITY = 0.6f
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessageCard(
@@ -45,9 +40,6 @@ fun MessageCard(
     modifier: Modifier = Modifier,
 ) {
     val cardColors = resolveMessageCardColors(message)
-    // Needed only to pass indication = null below: bubbles must keep their
-    // exact 60% container alpha in every state, so no ripple may overlay them.
-    val interactionSource = remember { MutableInteractionSource() }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -103,9 +95,8 @@ fun MessageCard(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
-            // Flat translucent bubbles: any elevation draws a shadow slab that
-            // reads as a separate rectangle beneath the bubble, and its tonal
-            // tint pollutes the exact 60% alpha. Must stay at an explicit 0.
+            // Flat bubbles: any elevation draws a shadow slab that reads as a
+            // separate rectangle beneath the bubble. Must stay at an explicit 0.
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -113,11 +104,7 @@ fun MessageCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = { onClick(message) },
-                    )
+                    .clickable { onClick(message) }
                     .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -206,7 +193,7 @@ fun MessageCard(
 
 /**
  * Group marker: a solid deep-blue chip with a white ring and heavy glyph,
- * independent of the theme accent — it must stay loud on the 60% sky-blue
+ * independent of the theme accent — it must stay loud on the sky-blue
  * group bubble in both light and dark schemes. Wraps its own width so the
  * localized word fits in every locale ("群", "Group", "群組").
  */
@@ -242,7 +229,7 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
         }
         message.chatName.isNotEmpty() && message.senderName != message.chatName -> {
             MessageCardColors(
-                containerColor = GroupSkyBlue.copy(alpha = BUBBLE_OPACITY),
+                containerColor = GroupSkyBlue,
                 timestampColor = scheme.onSurfaceVariant,
                 senderColor = scheme.onSurface,
                 contentColor = scheme.onSurface,
@@ -254,7 +241,7 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
 
 private fun specialCardColors(background: Color, scheme: ColorScheme): MessageCardColors {
     return MessageCardColors(
-        containerColor = background.copy(alpha = BUBBLE_OPACITY),
+        containerColor = background,
         timestampColor = Color.White.copy(alpha = 0.8f),
         senderColor = Color.White,
         contentColor = Color.White,
@@ -263,7 +250,7 @@ private fun specialCardColors(background: Color, scheme: ColorScheme): MessageCa
 
 private fun defaultPersonalColors(scheme: ColorScheme): MessageCardColors {
     return MessageCardColors(
-        containerColor = scheme.surfaceContainerLow.copy(alpha = BUBBLE_OPACITY),
+        containerColor = scheme.surfaceContainerLow,
         timestampColor = scheme.onSurfaceVariant,
         senderColor = scheme.onSurface,
         contentColor = scheme.onSurface,

@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -62,6 +64,23 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         viewModel.messages.observeForever { list -> messages = list ?: emptyList() }
         viewModel.messageCount.observeForever { c -> count = c ?: 0 }
+    }
+
+    val listState = rememberLazyListState()
+    // Newest message is index 0 (Room orders timestamp DESC). Scroll only when
+    // the newest id actually changes. Re-emissions of the same id happen on
+    // every return to this screen (messages state resets while the list state
+    // is saveable-restored) — scrolling then would yank the user back to the
+    // top, so the last auto-scrolled id survives in rememberSaveable.
+    // (Deleting the newest message also retargets newestId; the redundant
+    // scroll is harmless — the user is already near the top after swiping it.)
+    var lastAutoScrolledId by rememberSaveable { mutableLongStateOf(-1L) }
+    val newestId = messages.firstOrNull()?.id
+    LaunchedEffect(newestId) {
+        if (newestId != null && newestId != lastAutoScrolledId) {
+            listState.animateScrollToItem(0)
+            lastAutoScrolledId = newestId
+        }
     }
 
     val ctx = LocalContext.current
@@ -145,6 +164,7 @@ fun MainScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
