@@ -30,8 +30,14 @@ import androidx.compose.ui.unit.sp
 import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.model.SpecialType
+import kkkzheli.antirecall.wechat.ui.theme.GroupSkyBlue
 import kkkzheli.antirecall.wechat.ui.theme.RedPacketRed
-import kkkzheli.antirecall.wechat.ui.theme.OrangeCall
+import kkkzheli.antirecall.wechat.ui.theme.TransferOrange
+import kkkzheli.antirecall.wechat.ui.theme.VoiceCallGreen
+import kkkzheli.antirecall.wechat.ui.theme.VideoCallPurple
+
+/** Every bubble's container is drawn at this opacity over the screen background. */
+private const val BUBBLE_OPACITY = 0.6f
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -218,30 +224,16 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
     return when {
         message.isSpecial -> {
             when (message.specialType) {
-                SpecialType.RED_PACKET, SpecialType.TRANSFER -> {
-                    MessageCardColors(
-                        containerColor = RedPacketRed,
-                        timestampColor = Color.White.copy(alpha = 0.8f),
-                        senderColor = Color.White,
-                        contentColor = Color.White,
-                        groupAccent = scheme.primaryContainer,
-                    )
-                }
-                SpecialType.VOICE_CALL, SpecialType.VIDEO_CALL -> {
-                    MessageCardColors(
-                        containerColor = OrangeCall,
-                        timestampColor = Color.White.copy(alpha = 0.8f),
-                        senderColor = Color.White,
-                        contentColor = Color.White,
-                        groupAccent = scheme.primaryContainer,
-                    )
-                }
+                SpecialType.RED_PACKET -> specialCardColors(RedPacketRed, scheme)
+                SpecialType.TRANSFER -> specialCardColors(TransferOrange, scheme)
+                SpecialType.VOICE_CALL -> specialCardColors(VoiceCallGreen, scheme)
+                SpecialType.VIDEO_CALL -> specialCardColors(VideoCallPurple, scheme)
                 null -> defaultPersonalColors(scheme)
             }
         }
         message.chatName.isNotEmpty() && message.senderName != message.chatName -> {
             MessageCardColors(
-                containerColor = scheme.surfaceVariant,
+                containerColor = GroupSkyBlue.copy(alpha = BUBBLE_OPACITY),
                 timestampColor = scheme.onSurfaceVariant,
                 senderColor = scheme.onSurface,
                 contentColor = scheme.onSurface,
@@ -252,9 +244,19 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
     }
 }
 
+private fun specialCardColors(background: Color, scheme: ColorScheme): MessageCardColors {
+    return MessageCardColors(
+        containerColor = background.copy(alpha = BUBBLE_OPACITY),
+        timestampColor = Color.White.copy(alpha = 0.8f),
+        senderColor = Color.White,
+        contentColor = Color.White,
+        groupAccent = scheme.primaryContainer,
+    )
+}
+
 private fun defaultPersonalColors(scheme: ColorScheme): MessageCardColors {
     return MessageCardColors(
-        containerColor = scheme.surfaceContainerLow,
+        containerColor = scheme.surfaceContainerLow.copy(alpha = BUBBLE_OPACITY),
         timestampColor = scheme.onSurfaceVariant,
         senderColor = scheme.onSurface,
         contentColor = scheme.onSurface,

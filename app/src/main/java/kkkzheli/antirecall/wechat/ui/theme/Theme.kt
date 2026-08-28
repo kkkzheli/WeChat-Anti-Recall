@@ -19,7 +19,10 @@ import kkkzheli.antirecall.wechat.App
 
 val GreenPrimary = Color(0xFF07C160)
 val RedPacketRed = Color(0xFFFF4444)
-val OrangeCall = Color(0xFFFF9800)
+val TransferOrange = Color(0xFFFF9800)
+val VoiceCallGreen = Color(0xFF81C784)
+val VideoCallPurple = Color(0xFFA855F7)
+val GroupSkyBlue = Color(0xFF4FC3F7)
 val GroupBlue = Color(0xFF2196F3)
 val GroupBlueLight = Color(0xFFBBDEFB)
 val NeutralStroke = Color(0xFFE0E0E0)
@@ -50,8 +53,8 @@ fun getLightColors(): AntiRecallColors {
     return AntiRecallColors(
         specialTransfer = RedPacketRed,
         specialRedPacket = RedPacketRed,
-        specialVoiceCall = OrangeCall,
-        specialVideoCall = OrangeCall,
+        specialVoiceCall = VoiceCallGreen,
+        specialVideoCall = VideoCallPurple,
         groupAccent = GroupBlueLight,
         cardBackground = Color(0xFFFDFDFD),
         cardBorder = NeutralStroke,
