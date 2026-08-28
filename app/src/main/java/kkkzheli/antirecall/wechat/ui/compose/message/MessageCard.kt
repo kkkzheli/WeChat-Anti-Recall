@@ -1,11 +1,9 @@
 package kkkzheli.antirecall.wechat.ui.compose.message
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,11 +14,9 @@ import androidx.compose.material.icons.filled.LocalMall
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -30,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.model.SpecialType
+import kkkzheli.antirecall.wechat.ui.theme.GroupBadgeBlue
 import kkkzheli.antirecall.wechat.ui.theme.GroupSkyBlue
 import kkkzheli.antirecall.wechat.ui.theme.RedPacketRed
 import kkkzheli.antirecall.wechat.ui.theme.TransferOrange
@@ -39,7 +36,7 @@ import kkkzheli.antirecall.wechat.ui.theme.VideoCallPurple
 /** Every bubble's container is drawn at this opacity over the screen background. */
 private const val BUBBLE_OPACITY = 0.6f
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessageCard(
     message: Message,
@@ -48,8 +45,9 @@ fun MessageCard(
     modifier: Modifier = Modifier,
 ) {
     val cardColors = resolveMessageCardColors(message)
+    // Needed only to pass indication = null below: bubbles must keep their
+    // exact 60% container alpha in every state, so no ripple may overlay them.
     val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -105,19 +103,21 @@ fun MessageCard(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = cardColors.containerColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            // Flat translucent bubbles: any elevation draws a shadow slab that
+            // reads as a separate rectangle beneath the bubble, and its tonal
+            // tint pollutes the exact 60% alpha. Must stay at an explicit 0.
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .combinedClickable(
+                    .clickable(
                         interactionSource = interactionSource,
-                        indication = LocalIndication.current,
+                        indication = null,
                         onClick = { onClick(message) },
                     )
-                    .alpha(if (isPressed) 0.7f else 1f)
                     .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -144,7 +144,7 @@ fun MessageCard(
                     // Group record: line 1 group name (bold), line 2 sender
                     // nickname (absent on group system notices), line 3 content.
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        GroupBadge(cardColors.groupAccent)
+                        GroupBadge()
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = message.chatName,
@@ -166,7 +166,7 @@ fun MessageCard(
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (message.isGroup) {
-                            GroupBadge(cardColors.groupAccent)
+                            GroupBadge()
                             Spacer(modifier = Modifier.width(6.dp))
                         }
                         Text(
@@ -204,17 +204,26 @@ fun MessageCard(
     }
 }
 
+/**
+ * Group marker: a solid deep-blue chip with a white ring and heavy glyph,
+ * independent of the theme accent — it must stay loud on the 60% sky-blue
+ * group bubble in both light and dark schemes. Wraps its own width so the
+ * localized word fits in every locale ("群", "Group", "群組").
+ */
 @Composable
-private fun GroupBadge(accent: Color) {
-    Row(
+private fun GroupBadge() {
+    Text(
+        text = stringResource(R.string.msg_group_badge),
+        fontSize = 10.sp,
+        color = Color.White,
+        fontWeight = FontWeight.Black,
+        maxLines = 1,
         modifier = Modifier
-            .size(16.dp)
-            .background(accent, RoundedCornerShape(4.dp)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Text(text = stringResource(R.string.msg_group_badge), fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
-    }
+            .clip(RoundedCornerShape(5.dp))
+            .background(GroupBadgeBlue)
+            .border(1.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(5.dp))
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+    )
 }
 
 @Composable
@@ -237,7 +246,6 @@ private fun resolveMessageCardColors(message: Message): MessageCardColors {
                 timestampColor = scheme.onSurfaceVariant,
                 senderColor = scheme.onSurface,
                 contentColor = scheme.onSurface,
-                groupAccent = scheme.primary,
             )
         }
         else -> defaultPersonalColors(scheme)
@@ -250,7 +258,6 @@ private fun specialCardColors(background: Color, scheme: ColorScheme): MessageCa
         timestampColor = Color.White.copy(alpha = 0.8f),
         senderColor = Color.White,
         contentColor = Color.White,
-        groupAccent = scheme.primaryContainer,
     )
 }
 
@@ -260,7 +267,6 @@ private fun defaultPersonalColors(scheme: ColorScheme): MessageCardColors {
         timestampColor = scheme.onSurfaceVariant,
         senderColor = scheme.onSurface,
         contentColor = scheme.onSurface,
-        groupAccent = scheme.primaryContainer,
     )
 }
 
@@ -279,5 +285,4 @@ private data class MessageCardColors(
     val timestampColor: Color,
     val senderColor: Color,
     val contentColor: Color,
-    val groupAccent: Color,
 )

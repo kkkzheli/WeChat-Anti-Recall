@@ -15,6 +15,7 @@ import kkkzheli.antirecall.wechat.model.MessageType
 import kkkzheli.antirecall.wechat.model.SpecialType
 import kkkzheli.antirecall.wechat.util.NotificationHelper
 import kkkzheli.antirecall.wechat.util.SpecialMessageDetector
+import kkkzheli.antirecall.wechat.util.WeChatNotificationParser
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -111,7 +112,8 @@ class NotificationCaptureService : NotificationListenerService() {
             return
         }
 
-        val (isGroup, chatName, senderName, messageText) = parseWeChatNotification(contentTitle, contentText)
+        val (isGroup, chatName, senderName, messageText) =
+            WeChatNotificationParser.parse(contentTitle, contentText)
         Log.d(TAG, "  Parsed: group=$isGroup chat='$chatName' sender='$senderName'")
 
         val specialInfo = specialDetector.detect(contentTitle, messageText)
@@ -162,73 +164,6 @@ class NotificationCaptureService : NotificationListenerService() {
         if (isSpecial) {
             sendSpecialNotification(displayText, senderName, chatName)
         }
-    }
-
-    /** Strip any [...] prefix from WeChat notifications, e.g. [3], [3条], [3条消息]. */
-    private fun stripBracketPrefix(text: String): String {
-        return text.replace(Regex("^\\[[^\\]]+\\]\\s*"), "").trim()
-    }
-
-    private data class ParsedNotification(
-        val isGroup: Boolean,
-        val chatName: String,
-        val senderName: String,
-        val content: String,
-    )
-
-    /**
-     * Parse WeChat notification formats (com.tencent.mm):
-     *  - Single chat: title = contact name, text = bare message content.
-     *  - Group chat:  title = group name,   text = "sender nickname: content".
-     *  - Both may carry an "[N]"/"[N条]" unread-count prefix on the text.
-     *
-     * A group message is therefore recognized two ways: the title itself looks
-     * like a group name (contains 群/Group — also covers group system notices,
-     * which have no sender prefix), or the text carries a "name: " prefix whose
-     * name differs from the title (catches groups whose name lacks 群).
-     */
-    private fun parseWeChatNotification(rawTitle: String, rawText: String): ParsedNotification {
-        val title = stripBracketPrefix(rawTitle.trim()).trim()
-        val stripped = stripBracketPrefix(rawText.trim())
-        val firstLine = stripped.lineSequence().firstOrNull().orEmpty().trim()
-
-        val sepPos = findFirstSeparatorPos(firstLine)
-        val sender = if (sepPos > 0 && sepPos < 60) firstLine.substring(0, sepPos).trim() else ""
-
-        val titleLooksGroup = title.contains("群") || title.contains("Group", ignoreCase = true)
-        val hasSenderPrefix = sender.isNotEmpty() && !sender.equals(title, ignoreCase = true)
-
-        return when {
-            titleLooksGroup -> ParsedNotification(
-                isGroup = true,
-                chatName = title,
-                senderName = sender,
-                content = if (sepPos > 0) stripped.substring(sepPos + 1).trim() else stripped,
-            )
-            hasSenderPrefix -> ParsedNotification(
-                isGroup = true,
-                chatName = title,
-                senderName = sender,
-                content = stripped.substring(sepPos + 1).trim(),
-            )
-            else -> ParsedNotification(
-                isGroup = false,
-                chatName = "",
-                senderName = title,
-                content = stripped,
-            )
-        }
-    }
-
-    private fun findFirstSeparatorPos(text: String): Int {
-        var minPos = -1
-        listOf('：', ':').forEach { sep ->
-            val pos = text.indexOf(sep)
-            if (pos > 0 && (minPos < 0 || pos < minPos)) {
-                minPos = pos
-            }
-        }
-        return minPos
     }
 
     private fun detectMessageType(text: String): MessageType {
