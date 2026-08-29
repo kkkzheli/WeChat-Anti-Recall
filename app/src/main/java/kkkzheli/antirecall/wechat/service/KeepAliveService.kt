@@ -104,7 +104,7 @@ class KeepAliveService : Service() {
         val builder = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID_KEEP_ALIVE)
             .setContentTitle(getString(R.string.keep_alive_title))
             .setContentText(contentText())
-            .setSmallIcon(R.drawable.ic_stat_recall)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setColor(BRAND_GREEN)
             .setOngoing(true)
             .setAutoCancel(false)
