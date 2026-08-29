@@ -8,13 +8,10 @@ build/
 *.iml
 *.DS_Store
 
-# Android
+# Android — build outputs and APKs never enter git; release APKs are
+# published only as GitHub release assets.
 app/build/
-!app/build/outputs/apk/
-
-# APK files (keep release APKs for release)
 *.apk
-!AntiRecall-*.apk
 
 # Generated APKs
 app-debug.apk
@@ -34,7 +31,13 @@ releases/
 # Screenshots / test images
 screenshot*.png
 screenshot*.jpg
+/shot-*.png
 *.jpg
 *.jpeg
 *.webp
 **/screenshots/
+
+# Claude Code working files (project memory, scratch) — never published
+.claude/
+.claude_scratch/
+.learnings/

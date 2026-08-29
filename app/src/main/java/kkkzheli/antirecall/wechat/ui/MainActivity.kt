@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.core.content.ContextCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kkkzheli.antirecall.wechat.App
@@ -71,10 +70,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Branded splash; switches to Theme.AntiRecall once the first frame is
-        // ready. Must run before super.onCreate and needs the splash theme on
-        // the activity (see manifest + themes.xml).
-        installSplashScreen()
+        // No splash screen: the window background shows through until the first
+        // Compose frame, then the message list rains in from the top.
 
         // Full screen: content extends behind status bar, transparent color
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

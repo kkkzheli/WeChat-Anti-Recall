@@ -13,8 +13,8 @@ android {
         applicationId = "kkkzheli.antirecall.wechat"
         minSdk = 23
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.6.1"
+        versionCode = 14
+        versionName = "1.6.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -104,7 +104,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 
     // SplashScreen (backports the API 31 splash to older devices)
-    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Testing
     testImplementation(libs.junit)

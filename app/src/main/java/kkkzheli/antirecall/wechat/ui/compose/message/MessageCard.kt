@@ -24,7 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -57,6 +60,8 @@ import kkkzheli.antirecall.wechat.ui.theme.GroupBadgeBlue
 import kkkzheli.antirecall.wechat.ui.theme.LocalAntiRecallColors
 import kkkzheli.antirecall.wechat.ui.theme.LocalBubbleRadius
 import kkkzheli.antirecall.wechat.ui.theme.LocalListDensity
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** Avatars pick a stable color per name from this fixed, theme-independent palette. */
 private val AvatarPalette = listOf(
@@ -83,10 +88,16 @@ fun MessageCard(
     // growth — they can never drift apart.
     val commitPx = with(LocalDensity.current) { 56.dp.toPx() }
 
+    // Delete animation, part 1: confirming the swipe only arms the removal.
+    // Deleting straight from confirmValueChange would pop the row out of the
+    // list in a single frame; instead the box below springs the row fully
+    // off-screen first.
+    var pendingDelete by remember { mutableStateOf(false) }
+    var rowWidthPx by remember { mutableStateOf(0f) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value != SwipeToDismissBoxValue.Settled) {
-                onDelete?.invoke(message)
+                pendingDelete = true
                 true
             } else {
                 false
@@ -94,6 +105,19 @@ fun MessageCard(
         },
         positionalThreshold = { commitPx },
     )
+
+    // Delete animation, part 2: wait until the fly-out has carried the row
+    // ~90% off-screen (bounded by a 600ms grace so a stalled frame pipeline
+    // can never wedge the removal), then drop the data — animateItem() on the
+    // list rows glides the neighbours shut to finish the effect.
+    LaunchedEffect(pendingDelete) {
+        if (!pendingDelete) return@LaunchedEffect
+        withTimeoutOrNull(600L) {
+            snapshotFlow { runCatching { dismissState.requireOffset() }.getOrDefault(0f) }
+                .first { kotlin.math.abs(it) >= rowWidthPx * 0.9f }
+        }
+        onDelete?.invoke(message)
+    }
 
     // Haptic tick the moment the drag crosses the commit threshold and again
     // on the way back — the user feels "release to delete" without watching.
@@ -145,6 +169,7 @@ fun MessageCard(
         },
         modifier = modifier
             .fillMaxWidth()
+            .onSizeChanged { rowWidthPx = it.width.toFloat() }
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         val isMoney = message.specialType == SpecialType.RED_PACKET || message.specialType == SpecialType.TRANSFER

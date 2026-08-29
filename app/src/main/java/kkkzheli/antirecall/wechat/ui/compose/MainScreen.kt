@@ -67,6 +67,7 @@ import kkkzheli.antirecall.wechat.ui.theme.TitleStyle
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -118,11 +119,21 @@ fun MainScreen(
     // Entrance burst: one shared Animatable, played exactly once per process —
     // the flag lives on the ViewModel, so coming back from Settings/Search
     // starts settled at 1f (no replay, no blank flash) instead of re-animating.
+    // withTimeoutOrNull guards against OEM frame-pipeline stalls: animateTo
+    // advances on the frame clock, and when the display pipeline wedges the
+    // Choreographer can go quiet for seconds — the tween would hang at 0f and
+    // every card would stay invisible. The timeout runs on delay(), i.e. the
+    // main Looper, so it always fires and snaps everything visible; the list
+    // appears on the next frame that does get produced.
     val entrance = remember { Animatable(if (viewModel.entranceBurstPlayed) 1f else 0f) }
     LaunchedEffect(displayItems.isNotEmpty()) {
         if (displayItems.isEmpty() || viewModel.entranceBurstPlayed) return@LaunchedEffect
         viewModel.entranceBurstPlayed = true
-        entrance.animateTo(1f, tween(ENTRANCE_MS, easing = LinearEasing))
+        val finished = withTimeoutOrNull(ENTRANCE_MS * 4L) {
+            entrance.animateTo(1f, tween(ENTRANCE_MS, easing = LinearEasing))
+            true
+        }
+        if (finished == null) entrance.snapTo(1f)
     }
 
     // Newest message (the list is timestamp-DESC; index 0 may be its date header).
@@ -345,20 +356,27 @@ fun MainScreen(
                     ) {
                         displayItems.forEachIndexed { index, item ->
                             when (item) {
-                                is DisplayItem.DateHeader -> stickyHeader(
+                                // Regular item, NOT stickyHeader: the day pill
+                                // must scroll away together with its bubbles —
+                                // a sticky bar floating over the cards reads as
+                                // a different layer covering them.
+                                is DisplayItem.DateHeader -> item(
                                     key = "day_${item.epochDay}",
                                     contentType = "date",
                                 ) {
-                                    DayHeader(item.epochDay)
+                                    DayHeader(item.epochDay, modifier = Modifier.animateItem())
                                 }
                                 DisplayItem.UnreadDivider -> item(key = "unread", contentType = "unread") {
-                                    UnreadDividerRow(unreadCount)
+                                    UnreadDividerRow(unreadCount, modifier = Modifier.animateItem())
                                 }
                                 is DisplayItem.MessageItem -> item(
                                     key = "msg_${item.message.id}",
                                     contentType = msgContentType(item),
                                 ) {
-                                    BurstItem(index, entrance) {
+                                    // animateItem() covers mid-session arrivals:
+                                    // a freshly captured message glides/fades in
+                                    // among its neighbours instead of popping.
+                                    BurstItem(index, entrance, modifier = Modifier.animateItem()) {
                                         MessageCard(
                                             message = item.message,
                                             onClick = {},
@@ -419,22 +437,24 @@ fun MainScreen(
 
 private val ENTRANCE_MS = 650
 private const val ENTRANCE_STAGGER = 0.062f   // ≈40ms between items
-private const val ENTRANCE_ITEM_SPAN = 0.385f // ≈250ms per item's own fade+rise
+private const val ENTRANCE_ITEM_SPAN = 0.385f // ≈250ms per item's own fade+drop
 
 @Composable
 private fun BurstItem(
     index: Int,
     progress: Animatable<Float, AnimationVector1D>,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier.graphicsLayer {
+        modifier = modifier.graphicsLayer {
             val p = progress.value
             val start = (index % 12) * ENTRANCE_STAGGER
             val local = ((p - start) / ENTRANCE_ITEM_SPAN).coerceIn(0f, 1f)
             val eased = 1f - (1f - local) * (1f - local) * (1f - local)
             alpha = eased
-            translationY = (1f - eased) * 18.dp.toPx()
+            // Rain down from the top edge, newest first (list is DESC).
+            translationY = -(1f - eased) * 24.dp.toPx()
         },
     ) {
         content()
@@ -446,9 +466,9 @@ private fun BurstItem(
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun DayHeader(epochDay: Long) {
-    // Opaque backing so scrolled cards never show through the sticky header.
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
+private fun DayHeader(epochDay: Long, modifier: Modifier = Modifier) {
+    // Opaque backing so cards sliding beneath during a fling never show through.
+    Surface(color = MaterialTheme.colorScheme.background, modifier = modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -482,9 +502,9 @@ private fun dayLabel(epochDay: Long): String {
 }
 
 @Composable
-private fun UnreadDividerRow(count: Int) {
+private fun UnreadDividerRow(count: Int, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
