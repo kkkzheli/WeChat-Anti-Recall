@@ -7,7 +7,6 @@ build/
 .idea/
 *.iml
 *.DS_Store
-!.gradle/
 
 # Android
 app/build/
