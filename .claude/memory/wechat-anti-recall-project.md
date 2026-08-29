@@ -48,7 +48,7 @@ metadata:
 - **编译错误**: 已全部修复 (零错误)
 - **APK**: app-debug.apk (18MB)，已安装到设备 7XKFPVIZOJDEEIBI
 - **Git**: master 分支已推送，v1.0.0 tag 已创建
-- **图标**: 绿色微信气泡 + 时钟图标 (ic_launcher_foreground.xml)
+- **图标**: 经典 PNG 启动图标 (mipmap-*/ic_launcher.png)；启动画面标记是 drawable/ic_splash_mark.xml（勿混淆，ic_launcher_foreground 已删除）
 
 ## 安装到手机
 ```bash

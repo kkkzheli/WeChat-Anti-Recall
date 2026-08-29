@@ -4,7 +4,15 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Speech bubble shape (white — reads on the green adaptive-icon background) -->
+    <!-- White bubble-clock mark for the green splash backdrop (not the launcher icon).
+         Scaled into the central safe zone: Android 12+ masks splash icons to the
+         middle 72/108 of the canvas, and 0.70 keeps every point inside the strict
+         66/108 adaptive-icon safe circle on every OEM mask. -->
+    <group
+        android:scaleX="0.70"
+        android:scaleY="0.70"
+        android:pivotX="54"
+        android:pivotY="54">
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M54,12 C32,12 14,28 14,50 C14,72 32,88 54,88 C60,88 66,87 71,84 L76,96 L76,96 L74,96 L74,84 C82,78 90,66 90,50 C90,28 72,12 54,12Z" />
@@ -28,4 +36,5 @@
         android:strokeWidth="2"
         android:strokeLineCap="round"
         android:pathData="M54,54 L62,46" />
+    </group>
 </vector>

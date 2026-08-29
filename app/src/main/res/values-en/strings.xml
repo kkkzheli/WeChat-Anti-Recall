@@ -176,7 +176,11 @@
 
     <!-- Appearance settings: title style -->
     <string name="settings_title_style">Title style</string>
-    <string name="title_style_gradient">Flowing gradient</string>
+    <string name="title_gradient_cocktail">Cocktail cyan</string>
+    <string name="title_gradient_iridescent">Iridescent</string>
+    <string name="title_gradient_warm">Warm sunset</string>
+    <string name="title_gradient_unlocked">Easter egg unlocked: flowing gradients</string>
+    <string name="title_gradient_locked">Grant all permissions to unlock the flowing-gradient easter egg</string>
     <string name="title_style_accent">Accent</string>
     <string name="title_style_static">Solid</string>
 

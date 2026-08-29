@@ -110,9 +110,9 @@ class MainViewModel(
     }
 
     init {
-        // Whole list pipeline — filtering, date grouping, unread divider and
-        // same-sender run detection — runs upstream on the Default dispatcher;
-        // the collect block only posts the finished values on Main.
+        // Whole list pipeline — filtering, date grouping and the unread
+        // divider — runs upstream on the Default dispatcher; the collect
+        // block only posts the finished values on Main.
         viewModelScope.launch {
             combine(repository.getAllMessages(), lastSeenFlow, filterFlow) { all, lastSeen, f ->
                 computeDisplay(all, lastSeen, f)
@@ -191,8 +191,6 @@ class MainViewModel(
 
         val display = ArrayList<DisplayItem>(filtered.size + 8)
         var currentDay = Long.MIN_VALUE
-        var runKey: String? = null
-        var runTs = 0L
         var seenUnread = false
         var dividerPlaced = false
         for (m in filtered) {
@@ -205,7 +203,6 @@ class MainViewModel(
             if (day != currentDay) {
                 display.add(DisplayItem.DateHeader(day))
                 currentDay = day
-                runKey = null // a new day always starts a fresh sender run
             }
             // The unread divider sits BETWEEN the unseen block (above, newer)
             // and the first already-seen message (below, older) — placed
@@ -220,13 +217,7 @@ class MainViewModel(
                 seenUnread = true
             }
 
-            val key = m.senderName + "|" + m.chatName
-            // List is timestamp-DESC: runTs is the previous (newer) neighbor,
-            // so the gap must be runTs - m.timestamp.
-            val compact = key == runKey && (runTs - m.timestamp) <= 5 * 60_000L
-            display.add(DisplayItem.MessageItem(m, compact))
-            runKey = key
-            runTs = m.timestamp
+            display.add(DisplayItem.MessageItem(m))
         }
 
         val newest = all.firstOrNull()?.timestamp

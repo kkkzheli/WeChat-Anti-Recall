@@ -22,6 +22,12 @@ enum class ListDensity(val rowSpacingDp: Int, val cardPaddingVerticalDp: Int) {
 /** Visual style of the top-bar app title (all still permission-gated). */
 enum class TitleStyle { GRADIENT, ACCENT, STATIC }
 
+/**
+ * Which flowing-gradient palette animates the title once every permission is
+ * granted (the gradient easter egg). COCKTAIL is the original blue/cyan wash.
+ */
+enum class TitleGradientStyle { COCKTAIL, IRIDESCENT, WARM }
+
 /** Container colors of special messages: saturated (vivid) or night-friendly (soft). */
 enum class SpecialPalette { VIVID, SOFT }
 
@@ -40,6 +46,7 @@ data class AppearanceSettings(
     val bubbleRadiusDp: Int = 16,
     val density: ListDensity = ListDensity.STANDARD,
     val titleStyle: TitleStyle = TitleStyle.GRADIENT,
+    val titleGradient: TitleGradientStyle = TitleGradientStyle.COCKTAIL,
     val specialPalette: SpecialPalette = SpecialPalette.VIVID,
 ) {
     companion object {
@@ -78,6 +85,7 @@ object AppearanceRepository {
     private val KEY_RADIUS = androidx.datastore.preferences.core.intPreferencesKey("pref_bubble_radius")
     private val KEY_DENSITY = androidx.datastore.preferences.core.stringPreferencesKey("pref_list_density")
     private val KEY_TITLE = androidx.datastore.preferences.core.stringPreferencesKey("pref_title_style")
+    private val KEY_TITLE_GRADIENT = androidx.datastore.preferences.core.stringPreferencesKey("pref_title_gradient")
     private val KEY_SPECIAL = androidx.datastore.preferences.core.stringPreferencesKey("pref_special_palette")
     private val LEGACY_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("pref_theme_mode")
 
@@ -101,6 +109,7 @@ object AppearanceRepository {
             bubbleRadiusDp = (prefs[KEY_RADIUS] ?: 16).coerceIn(0, 28),
             density = prefs[KEY_DENSITY]?.let { runCatching { ListDensity.valueOf(it) }.getOrDefault(ListDensity.STANDARD) } ?: ListDensity.STANDARD,
             titleStyle = prefs[KEY_TITLE]?.let { runCatching { TitleStyle.valueOf(it) }.getOrDefault(TitleStyle.GRADIENT) } ?: TitleStyle.GRADIENT,
+            titleGradient = prefs[KEY_TITLE_GRADIENT]?.let { runCatching { TitleGradientStyle.valueOf(it) }.getOrDefault(TitleGradientStyle.COCKTAIL) } ?: TitleGradientStyle.COCKTAIL,
             specialPalette = prefs[KEY_SPECIAL]?.let { runCatching { SpecialPalette.valueOf(it) }.getOrDefault(SpecialPalette.VIVID) } ?: SpecialPalette.VIVID,
         )
     }
@@ -121,6 +130,7 @@ object AppearanceRepository {
                 bubbleRadiusDp = (prefs[KEY_RADIUS] ?: 16).coerceIn(0, 28),
                 density = prefs[KEY_DENSITY]?.let { runCatching { ListDensity.valueOf(it) }.getOrDefault(ListDensity.STANDARD) } ?: ListDensity.STANDARD,
                 titleStyle = prefs[KEY_TITLE]?.let { runCatching { TitleStyle.valueOf(it) }.getOrDefault(TitleStyle.GRADIENT) } ?: TitleStyle.GRADIENT,
+                titleGradient = prefs[KEY_TITLE_GRADIENT]?.let { runCatching { TitleGradientStyle.valueOf(it) }.getOrDefault(TitleGradientStyle.COCKTAIL) } ?: TitleGradientStyle.COCKTAIL,
                 specialPalette = prefs[KEY_SPECIAL]?.let { runCatching { SpecialPalette.valueOf(it) }.getOrDefault(SpecialPalette.VIVID) } ?: SpecialPalette.VIVID,
             )
             val next = transform(current)
@@ -132,6 +142,7 @@ object AppearanceRepository {
             prefs[KEY_RADIUS] = next.bubbleRadiusDp
             prefs[KEY_DENSITY] = next.density.name
             prefs[KEY_TITLE] = next.titleStyle.name
+            prefs[KEY_TITLE_GRADIENT] = next.titleGradient.name
             prefs[KEY_SPECIAL] = next.specialPalette.name
         }
     }

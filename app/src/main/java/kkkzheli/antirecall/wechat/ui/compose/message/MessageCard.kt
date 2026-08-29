@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,12 +66,10 @@ private val AvatarPalette = listOf(
 
 private val URL_REGEX = Regex("https?://\\S+")
 private val AMOUNT_REGEX = Regex("[¥￥]\\s*[0-9]+(?:[.,][0-9]+)?")
-private val TRAILING_SECONDS = Regex(":\\d{2}$")
 
 @Composable
 fun MessageCard(
     message: Message,
-    compact: Boolean = false,
     onClick: (Message) -> Unit = {},
     onDelete: ((Message) -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -148,9 +148,10 @@ fun MessageCard(
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         val isMoney = message.specialType == SpecialType.RED_PACKET || message.specialType == SpecialType.TRANSFER
+        val container = resolveContainerColor(message, special)
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = resolveContainerColor(message, special)),
+            colors = CardDefaults.cardColors(containerColor = container),
             // Flat bubbles: any elevation draws a shadow slab that reads as a
             // separate rectangle beneath the bubble. Must stay at an explicit 0.
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -169,18 +170,12 @@ fun MessageCard(
                     ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (compact) {
-                    Spacer(modifier = Modifier.width(46.dp))
-                } else {
-                    MessageAvatar(message, special)
-                    Spacer(modifier = Modifier.width(10.dp))
-                }
+                MessageAvatar(message, special)
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    if (!compact) {
-                        NameRow(message)
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
+                    NameRow(message, container)
+                    Spacer(modifier = Modifier.height(3.dp))
                     if (isMoney) {
                         MoneyCardBody(message, special)
                     } else {
@@ -238,43 +233,80 @@ private fun avatarContent(
 }
 
 @Composable
-private fun NameRow(message: Message) {
-    val time = remember(message.displayTime) { TRAILING_SECONDS.replace(message.displayTime, "") }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (message.isGroup && message.chatName.isNotEmpty()) {
-            // Group record: line 1 group name (bold) + badge; the sender
-            // nickname moves to line 2 (absent on group system notices).
-            GroupBadge()
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = message.chatName,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = nameColor(message),
-                maxLines = 1,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-        } else {
-            Text(
-                text = message.senderName,
-                style = MaterialTheme.typography.titleMedium,
-                color = nameColor(message),
-                maxLines = 1,
-                modifier = Modifier.weight(1f, fill = false),
-            )
+private fun NameRow(message: Message, containerColor: Color) {
+    // The left column is the only weighted child, so the timestamp keeps just
+    // its intrinsic width and sits flush at the card's top-right; on group
+    // records the sender line lives inside the column so it hugs the group
+    // name instead of being pushed down by the taller stamp.
+    Row(verticalAlignment = Alignment.Top) {
+        Column(modifier = Modifier.weight(1f)) {
+            if (message.isGroup && message.chatName.isNotEmpty()) {
+                // Group record: line 1 group name (bold) + badge; the sender
+                // nickname moves to line 2 (absent on group system notices).
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    GroupBadge()
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = message.chatName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = nameColor(message),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (message.senderName.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(1.dp))
+                    Text(
+                        text = message.senderName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = senderColor(message, containerColor),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            } else {
+                Text(
+                    text = message.senderName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = nameColor(message),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = time.ifEmpty { "--" },
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-        )
+        Spacer(modifier = Modifier.width(8.dp))
+        MessageTimestamp(message, containerColor)
     }
-    if (message.isGroup && message.chatName.isNotEmpty() && message.senderName.isNotEmpty()) {
+}
+
+/**
+ * Top-right corner stamp: date on the first line, wall-clock time (with
+ * seconds) below, both in the grey secondary color. Special bubbles sit on a
+ * saturated container where grey would vanish, so there the stamp follows the
+ * container's luminance — dark text on light vivid palettes (voice green /
+ * transfer orange), white on dark ones — and stays legible everywhere.
+ */
+@Composable
+private fun MessageTimestamp(message: Message, containerColor: Color) {
+    val stampColor =
+        if (message.specialType == null) MaterialTheme.colorScheme.onSurfaceVariant
+        else if (containerColor.luminance() > 0.5f) Color.Black.copy(alpha = 0.55f)
+        else Color.White
+    Column(
+        horizontalAlignment = Alignment.End,
+        modifier = Modifier.padding(start = 8.dp),
+    ) {
         Text(
-            text = message.senderName,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+            text = message.displayDate.ifEmpty { "--" },
+            style = MaterialTheme.typography.labelSmall,
+            color = stampColor,
+            maxLines = 1,
+        )
+        Text(
+            text = message.displayTime.ifEmpty { "--" },
+            style = MaterialTheme.typography.labelSmall,
+            color = stampColor,
             maxLines = 1,
         )
     }
@@ -283,6 +315,13 @@ private fun NameRow(message: Message) {
 @Composable
 private fun nameColor(message: Message): Color =
     if (message.specialType != null) Color.White else MaterialTheme.colorScheme.onSurface
+
+/** Secondary sender line — follows the container like [nameColor] does. */
+@Composable
+private fun senderColor(message: Message, containerColor: Color): Color =
+    if (message.specialType == null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+    else if (containerColor.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f)
+    else Color.White.copy(alpha = 0.8f)
 
 /** Red packet / transfer body: icon tile, bold amount, original notice below. */
 @Composable

@@ -141,6 +141,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         lastCaptureTimeMs = lastCaptureTimeMs,
                                         titleStyle = settings.titleStyle,
+                                        titleGradient = settings.titleGradient,
                                     )
                                 }
                                 Screen.SEARCH -> {

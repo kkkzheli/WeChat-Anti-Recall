@@ -39,9 +39,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -59,6 +62,7 @@ import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.model.DisplayItem
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.ui.compose.message.MessageCard
+import kkkzheli.antirecall.wechat.ui.theme.TitleGradientStyle
 import kkkzheli.antirecall.wechat.ui.theme.TitleStyle
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -85,6 +89,7 @@ fun MainScreen(
     onDeleteMessage: (Message) -> Unit = {},
     lastCaptureTimeMs: Long? = null,
     titleStyle: TitleStyle = TitleStyle.GRADIENT,
+    titleGradient: TitleGradientStyle = TitleGradientStyle.COCKTAIL,
 ) {
     // Seed from the current LiveData values so the first frame already has data.
     // observeForever has no lifecycle owner, so the observers are removed manually
@@ -264,7 +269,7 @@ fun MainScreen(
                     // as an overlay on the filter icon — there it has the whole top
                     // bar to grow and can never be squeezed by neighbouring icons.
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        AppTitle(permissions, titleStyle)
+                        AppTitle(permissions, titleStyle, titleGradient)
                         AnimatedVisibility(
                             visible = count > 0,
                             enter = fadeIn(tween(150)) + scaleIn(initialScale = 0.8f, animationSpec = tween(150)),
@@ -356,7 +361,6 @@ fun MainScreen(
                                     BurstItem(index, entrance) {
                                         MessageCard(
                                             message = item.message,
-                                            compact = item.compact,
                                             onClick = {},
                                             onDelete = { msg ->
                                                 onDeleteMessage(msg)
@@ -507,8 +511,8 @@ private fun UnreadDividerRow(count: Int) {
 
 private fun msgContentType(item: DisplayItem.MessageItem): String = when {
     item.message.isSpecial -> "special"
-    item.message.chatName.isNotEmpty() -> if (item.compact) "group_c" else "group"
-    else -> if (item.compact) "personal_c" else "personal"
+    item.message.chatName.isNotEmpty() -> "group"
+    else -> "personal"
 }
 
 // ---------------------------------------------------------------------------
@@ -586,65 +590,101 @@ private fun RunningBanner() {
 }
 
 @Composable
-private fun AppTitle(permissions: PermissionsState, style: TitleStyle) {
-    // Normal title until every permission is granted — the flourish is a
-    // reward for a fully armed capture pipeline.
+private fun AppTitle(permissions: PermissionsState, style: TitleStyle, gradient: TitleGradientStyle) {
     if (!permissions.allGranted) {
-        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+        // Before every permission is granted the flowing gradients are locked.
+        // The unlockable styles (accent/solid) are the only selectable ones;
+        // the stored GRADIENT default folds into the solid look so the title
+        // always matches the chip the Settings screen highlights.
+        when (style) {
+            TitleStyle.GRADIENT, TitleStyle.STATIC -> Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            TitleStyle.ACCENT -> Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         return
     }
-    when (style) {
-        TitleStyle.GRADIENT -> GradientTitle()
-        TitleStyle.ACCENT -> Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
-            color = MaterialTheme.colorScheme.primary,
-        )
-        TitleStyle.STATIC -> Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+    // Fully armed pipeline: the title always flows — which flavour is the
+    // user's pick (accent/solid are retired once the easter egg unlocks).
+    GradientTitle(gradient)
 }
 
-/** Colors of the title gradient; first and last match so the repeated tile wraps seamlessly. */
-private val TitleGradientColors = listOf(
-    Color(0xFF1565C0),
-    Color(0xFF00E5FF),
-    Color(0xFF4FC3F7),
-    Color(0xFF1565C0),
-)
+/**
+ * The three flowing-gradient palettes. First and last color match so the
+ * repeated tile wraps seamlessly when the phase loops.
+ */
+private fun gradientColorsFor(style: TitleGradientStyle): List<Color> = when (style) {
+    // Cocktail: deep sea blue → cyan splash (the original).
+    TitleGradientStyle.COCKTAIL -> listOf(
+        Color(0xFF1565C0),
+        Color(0xFF00E5FF),
+        Color(0xFF4FC3F7),
+        Color(0xFF1565C0),
+    )
+    // Iridescent: full spectrum sweep, red → amber → green → blue → magenta.
+    TitleGradientStyle.IRIDESCENT -> listOf(
+        Color(0xFFFF5252),
+        Color(0xFFFFD740),
+        Color(0xFF69F0AE),
+        Color(0xFF40C4FF),
+        Color(0xFFE040FB),
+        Color(0xFFFF5252),
+    )
+    // Warm sunset: ember red → orange → amber glow.
+    TitleGradientStyle.WARM -> listOf(
+        Color(0xFFD84315),
+        Color(0xFFFF6D00),
+        Color(0xFFFFAB40),
+        Color(0xFFD84315),
+    )
+}
 
 /**
  * Seamless looping gradient title. The gradient period equals the title width and
  * the color sequence starts and ends on the same color, so when [phase] wraps from
- * 1 back to 0 the pattern is identical — no visible jump.
+ * 1 back to 0 the pattern is identical — no visible jump. The phase is read only
+ * inside the draw lambda (never in composition), so animating costs zero
+ * recompositions, and the period comes from the laid-out size, so there is no
+ * first-frame squeeze.
  */
 @Composable
-private fun GradientTitle() {
+private fun GradientTitle(style: TitleGradientStyle) {
     val transition = rememberInfiniteTransition(label = "titleWave")
-    val phase by transition.animateFloat(
+    val phaseState = transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
         label = "phase",
     )
-    var titleWidth by remember { mutableStateOf(0f) }
-    val period = titleWidth.coerceAtLeast(1f)
-    val brush = Brush.linearGradient(
-        colors = TitleGradientColors,
-        start = Offset(phase * period, 0f),
-        end = Offset(phase * period + period, 0f),
-        tileMode = TileMode.Repeated,
-    )
+    val gradientColors = remember(style) { gradientColorsFor(style) }
     Text(
         text = stringResource(R.string.app_name),
-        style = MaterialTheme.typography.titleLarge.copy(
-            fontWeight = FontWeight.ExtraBold,
-            brush = brush,
-        ),
-        onTextLayout = { result -> titleWidth = result.size.width.toFloat() },
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+        // Offscreen keeps the layer to the glyph pixels only, so the SrcAtop
+        // sweep masks to the text instead of washing over the background.
+        modifier = Modifier
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                val period = size.width
+                if (period <= 0f) return@drawWithContent
+                val phase = phaseState.value
+                drawRect(
+                    brush = Brush.linearGradient(
+                        colors = gradientColors,
+                        start = Offset(phase * period, 0f),
+                        end = Offset(phase * period + period, 0f),
+                        tileMode = TileMode.Repeated,
+                    ),
+                    blendMode = BlendMode.SrcAtop,
+                )
+            },
     )
 }
 

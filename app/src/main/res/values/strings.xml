@@ -176,7 +176,11 @@
 
     <!-- Appearance settings: title style -->
     <string name="settings_title_style">标题样式</string>
-    <string name="title_style_gradient">流光渐变</string>
+    <string name="title_gradient_cocktail">鸡尾酒青蓝</string>
+    <string name="title_gradient_iridescent">炫彩</string>
+    <string name="title_gradient_warm">暖阳红橙</string>
+    <string name="title_gradient_unlocked">彩蛋已解锁：流光渐变</string>
+    <string name="title_gradient_locked">授予全部权限后解锁流光渐变彩蛋</string>
     <string name="title_style_accent">强调色</string>
     <string name="title_style_static">纯色</string>
 

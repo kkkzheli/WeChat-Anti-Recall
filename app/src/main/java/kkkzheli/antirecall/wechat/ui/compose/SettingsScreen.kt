@@ -54,6 +54,7 @@ import kkkzheli.antirecall.wechat.ui.theme.ListDensity
 import kkkzheli.antirecall.wechat.ui.theme.SpecialPalette
 import kkkzheli.antirecall.wechat.ui.theme.ThemeMode
 import kkkzheli.antirecall.wechat.ui.theme.ThemePreset
+import kkkzheli.antirecall.wechat.ui.theme.TitleGradientStyle
 import kkkzheli.antirecall.wechat.ui.theme.TitleStyle
 import kkkzheli.antirecall.wechat.util.AccessibilityUtil
 import kkkzheli.antirecall.wechat.util.AutoStartUtil
@@ -188,23 +189,56 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Title style
+                    // Title style — the flowing gradients are an easter egg
+                    // locked until every permission is granted. Before that,
+                    // only the plain styles (accent / solid) are selectable;
+                    // once fully armed the section swaps to the three gradient
+                    // flavours and the plain styles retire.
+                    val titlePerms = rememberPermissions(context)
                     Text(
                         text = stringResource(R.string.settings_title_style),
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp),
                     )
-                    SelectorChips(
-                        options = listOf(
-                            TitleStyle.GRADIENT to stringResource(R.string.title_style_gradient),
-                            TitleStyle.ACCENT to stringResource(R.string.title_style_accent),
-                            TitleStyle.STATIC to stringResource(R.string.title_style_static),
-                        ),
-                        selected = settings.titleStyle,
-                        onSelect = { s ->
-                            scope.launch { AppearanceRepository.write { it.copy(titleStyle = s) } }
-                        },
-                    )
+                    if (titlePerms.allGranted) {
+                        SelectorChips(
+                            options = listOf(
+                                TitleGradientStyle.COCKTAIL to stringResource(R.string.title_gradient_cocktail),
+                                TitleGradientStyle.IRIDESCENT to stringResource(R.string.title_gradient_iridescent),
+                                TitleGradientStyle.WARM to stringResource(R.string.title_gradient_warm),
+                            ),
+                            selected = settings.titleGradient,
+                            onSelect = { g ->
+                                scope.launch { AppearanceRepository.write { it.copy(titleGradient = g) } }
+                            },
+                        )
+                        Text(
+                            text = stringResource(R.string.title_gradient_unlocked),
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    } else {
+                        SelectorChips(
+                            options = listOf(
+                                TitleStyle.ACCENT to stringResource(R.string.title_style_accent),
+                                TitleStyle.STATIC to stringResource(R.string.title_style_static),
+                            ),
+                            // The stored GRADIENT default isn't offered while
+                            // locked — present it as the solid look it renders
+                            // as, so a chip is always highlighted.
+                            selected = if (settings.titleStyle == TitleStyle.GRADIENT) TitleStyle.STATIC else settings.titleStyle,
+                            onSelect = { s ->
+                                scope.launch { AppearanceRepository.write { it.copy(titleStyle = s) } }
+                            },
+                        )
+                        Text(
+                            text = stringResource(R.string.title_gradient_locked),
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
                 }
             }
 

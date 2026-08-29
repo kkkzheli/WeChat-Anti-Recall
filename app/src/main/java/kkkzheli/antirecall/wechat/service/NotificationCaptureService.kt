@@ -126,6 +126,11 @@ class NotificationCaptureService : NotificationListenerService() {
         }
 
         val now = System.currentTimeMillis()
+        // SimpleDateFormat pins its zone at construction; re-resolve on every
+        // capture so a device timezone change is reflected immediately and the
+        // stamp always agrees with the display-side day headers.
+        dateFormat.timeZone = TimeZone.getDefault()
+        timeFormat.timeZone = TimeZone.getDefault()
         val displayDate = dateFormat.format(Date(now))
         val displayTime = timeFormat.format(Date(now))
 
