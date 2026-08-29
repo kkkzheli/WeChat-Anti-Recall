@@ -55,6 +55,8 @@
     <string name="action_search">Search</string>
     <string name="action_filter">Filter</string>
     <string name="action_settings">Settings</string>
+    <string name="action_confirm">OK</string>
+    <string name="action_cancel">Cancel</string>
     <string name="empty_messages">No messages yet.\nPlease ensure Anti Recall has notification access.</string>
     <string name="empty_capturing">Capturing WeChat notifications…</string>
 
@@ -172,6 +174,11 @@
     <string name="preset_amoled">Pure black AMOLED</string>
     <string name="preset_graphite">Graphite</string>
     <string name="preset_warm_sand">Warm sand</string>
+    <string name="preset_ocean">Ocean blue</string>
+    <string name="preset_forest">Forest</string>
+    <string name="preset_sunset">Sunset</string>
+    <string name="preset_sakura">Sakura pink</string>
+    <string name="accent_picker_title">Choose accent color</string>
     <string name="settings_accent_color">Accent color</string>
 
     <!-- Appearance settings: title style -->

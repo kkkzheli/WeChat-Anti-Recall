@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Keep-alive notification small icon: the app's chat bubble with the
+    recall-blocking X punched through as transparent negative space.
+
+    Notification small icons are rendered by the system as a single-colour
+    alpha mask on every supported API level — all colour channels are
+    discarded, so the design must live entirely in the alpha channel. A
+    multi-colour illustration would collapse into a flat silhouette, hence
+    one opaque path with the X (and only the X) cut out via evenOdd: where
+    the X quads overlap the bubble the winding count is even (hole), so the
+    X stays visible as a transparent gap in the monochrome render.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Material chat bubble, stroke-free. The X hole is the pre-computed
+         12-gon union outline of the two crossed strokes (centre 12,10.5,
+         half-width 1.1) — a single subpath, so no evenOdd parity artefact
+         where the strokes would otherwise overlap (3 windings → refilled
+         dot at the crossing). -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M20,2H4C2.9,2 2,2.9 2,4v18l4,-4h14c1.1,0 2,-0.9 2,-2V4C22,2.9 21.1,2 20,2z
+M9.78,6.72L12,8.94L14.22,6.72L15.78,8.28L13.56,10.5L15.78,12.72L14.22,14.28L12,12.06L9.78,14.28L8.22,12.72L10.44,10.5L8.22,11.22Z" />
+</vector>

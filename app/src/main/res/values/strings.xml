@@ -55,6 +55,8 @@
     <string name="action_search">搜索</string>
     <string name="action_filter">筛选</string>
     <string name="action_settings">设置</string>
+    <string name="action_confirm">确定</string>
+    <string name="action_cancel">取消</string>
     <string name="empty_messages">暂无消息\n请确保 Anti Recall 已读取通知权限</string>
     <string name="empty_capturing">正在捕获微信通知消息…</string>
 
@@ -172,6 +174,11 @@
     <string name="preset_amoled">纯黑 AMOLED</string>
     <string name="preset_graphite">石墨灰</string>
     <string name="preset_warm_sand">暖沙</string>
+    <string name="preset_ocean">海洋蓝</string>
+    <string name="preset_forest">森林</string>
+    <string name="preset_sunset">日落</string>
+    <string name="preset_sakura">樱花粉</string>
+    <string name="accent_picker_title">选择强调色</string>
     <string name="settings_accent_color">强调色</string>
 
     <!-- Appearance settings: title style -->

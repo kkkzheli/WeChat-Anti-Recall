@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -166,6 +167,10 @@ fun SettingsScreen(
                                 ThemePreset.AMOLED to stringResource(R.string.preset_amoled),
                                 ThemePreset.GRAPHITE to stringResource(R.string.preset_graphite),
                                 ThemePreset.WARM_SAND to stringResource(R.string.preset_warm_sand),
+                                ThemePreset.OCEAN to stringResource(R.string.preset_ocean),
+                                ThemePreset.FOREST to stringResource(R.string.preset_forest),
+                                ThemePreset.SUNSET to stringResource(R.string.preset_sunset),
+                                ThemePreset.SAKURA to stringResource(R.string.preset_sakura),
                             ),
                             selected = settings.preset,
                             onSelect = { p ->
@@ -179,12 +184,26 @@ fun SettingsScreen(
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp),
                         )
+                        var showAccentPicker by remember { mutableStateOf(false) }
                         AccentSwatchRow(
                             selectedArgb = settings.accentColorArgb,
-                            onSelect = { c ->
+                            onSelectEnum = { c ->
                                 scope.launch { AppearanceRepository.write { it.copy(accentColorArgb = c.argb) } }
                             },
+                            onSelectCustom = { showAccentPicker = true },
                         )
+                        if (showAccentPicker) {
+                            AccentColorPickerDialog(
+                                initialArgb = settings.accentColorArgb,
+                                onConfirm = { argb ->
+                                    scope.launch {
+                                        AppearanceRepository.write { it.copy(accentColorArgb = argb) }
+                                    }
+                                    showAccentPicker = false
+                                },
+                                onDismiss = { showAccentPicker = false },
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -400,6 +419,7 @@ fun SettingsScreen(
                         text = stringResource(R.string.settings_about_project),
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     val pkgInfo = try { context.packageManager.getPackageInfo(context.packageName, 0) } catch (_: Exception) { null }
@@ -419,6 +439,7 @@ fun SettingsScreen(
                         text = stringResource(R.string.settings_about_tech),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -519,6 +540,8 @@ private fun <T> SelectorChips(
     FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // 8 presets wrap to ~3 rows; without this the rows stack flush.
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         options.forEach { (value, label) ->
             FilterChip(
@@ -531,9 +554,20 @@ private fun <T> SelectorChips(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AccentSwatchRow(selectedArgb: Int, onSelect: (AccentColor) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+private fun AccentSwatchRow(selectedArgb: Int, onSelectEnum: (AccentColor) -> Unit, onSelectCustom: () -> Unit) {
+    // A custom picked color matches none of the curated swatches — the
+    // trailing rainbow wheel then wears the selection ring and previews it.
+    // FlowRow (not Row): 7 fixed 34dp swatches would overflow the card's
+    // 296dp content width on 360dp-class screens and clip the wheel entirely
+    // on 320dp panes; wrapping keeps every swatch reachable.
+    val isCustom = AccentColor.entries.none { it.argb == selectedArgb }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(vertical = 4.dp),
+    ) {
         AccentColor.entries.forEach { c ->
             val color = Color(c.argb)
             val isSelected = c.argb == selectedArgb
@@ -549,8 +583,37 @@ private fun AccentSwatchRow(selectedArgb: Int, onSelect: (AccentColor) -> Unit) 
                     .padding(4.dp)
                     .clip(CircleShape)
                     .background(color)
-                    .clickable { onSelect(c) },
+                    .clickable { onSelectEnum(c) },
             )
+        }
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .border(
+                    width = if (isCustom) 3.dp else 1.dp,
+                    color = if (isCustom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    shape = CircleShape,
+                )
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835),
+                            Color(0xFF43A047), Color(0xFF1E88E5), Color(0xFF8E24AA), Color(0xFFE53935),
+                        )
+                    )
+                )
+                .clickable(onClick = onSelectCustom),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isCustom) {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(Color(selectedArgb)),
+                )
+            }
         }
     }
 }

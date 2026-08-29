@@ -252,6 +252,170 @@ private val WarmSandDarkScheme = darkColorScheme(
     surfaceContainerHighest = Color(0xFF37322B),
 )
 
+/** Ocean preset: cool blue-cast neutrals. */
+private val OceanLightScheme = lightColorScheme(
+    primary = Color(0xFF1A67B8),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF1A67B8).copy(alpha = 0.15f),
+    onPrimaryContainer = Color(0xFF0E4A85),
+    background = Color(0xFFF7FAFD),
+    onBackground = Color(0xFF181C20),
+    surface = Color(0xFFF7FAFD),
+    onSurface = Color(0xFF181C20),
+    surfaceVariant = Color(0xFFDEE5EC),
+    onSurfaceVariant = Color(0xFF41474D),
+    outline = Color(0xFF71787E),
+    outlineVariant = Color(0xFFC1C8CE),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF1F5F9),
+    surfaceContainer = Color(0xFFEBF0F5),
+    surfaceContainerHigh = Color(0xFFE5EAEF),
+    surfaceContainerHighest = Color(0xFFE0E5EA),
+)
+
+private val OceanDarkScheme = darkColorScheme(
+    primary = Color(0xFF9CCAFF),
+    onPrimary = Color(0xFF003259),
+    primaryContainer = Color(0xFF1C4A75),
+    onPrimaryContainer = Color(0xFFCCE4FF),
+    background = Color(0xFF0E1319),
+    onBackground = Color(0xFFDEE3E8),
+    surface = Color(0xFF0E1319),
+    onSurface = Color(0xFFDEE3E8),
+    surfaceVariant = Color(0xFF41474D),
+    onSurfaceVariant = Color(0xFFC1C8CE),
+    outline = Color(0xFF8B9298),
+    outlineVariant = Color(0xFF41474D),
+    surfaceContainerLowest = Color(0xFF090D12),
+    surfaceContainerLow = Color(0xFF151A20),
+    surfaceContainer = Color(0xFF191E24),
+    surfaceContainerHigh = Color(0xFF242930),
+    surfaceContainerHighest = Color(0xFF2F343B),
+)
+
+/** Forest preset: sage green-cast neutrals. */
+private val ForestLightScheme = lightColorScheme(
+    primary = Color(0xFF2E6B3F),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF2E6B3F).copy(alpha = 0.15f),
+    onPrimaryContainer = Color(0xFF1C4728),
+    background = Color(0xFFF6FAF6),
+    onBackground = Color(0xFF181D18),
+    surface = Color(0xFFF6FAF6),
+    onSurface = Color(0xFF181D18),
+    surfaceVariant = Color(0xFFDEE7DD),
+    onSurfaceVariant = Color(0xFF414941),
+    outline = Color(0xFF717971),
+    outlineVariant = Color(0xFFC1C9C0),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF0F5F0),
+    surfaceContainer = Color(0xFFEAEFE9),
+    surfaceContainerHigh = Color(0xFFE4E9E3),
+    surfaceContainerHighest = Color(0xFFDFE4DD),
+)
+
+private val ForestDarkScheme = darkColorScheme(
+    primary = Color(0xFFA3D1A5),
+    onPrimary = Color(0xFF0C3317),
+    primaryContainer = Color(0xFF23512F),
+    onPrimaryContainer = Color(0xFFBFEBBF),
+    background = Color(0xFF0F140F),
+    onBackground = Color(0xFFDEE3DD),
+    surface = Color(0xFF0F140F),
+    onSurface = Color(0xFFDEE3DD),
+    surfaceVariant = Color(0xFF414941),
+    onSurfaceVariant = Color(0xFFC1C9C0),
+    outline = Color(0xFF8B938A),
+    outlineVariant = Color(0xFF414941),
+    surfaceContainerLowest = Color(0xFF0A0E0A),
+    surfaceContainerLow = Color(0xFF161B15),
+    surfaceContainer = Color(0xFF1A1F19),
+    surfaceContainerHigh = Color(0xFF252A23),
+    surfaceContainerHighest = Color(0xFF30352E),
+)
+
+/** Sunset preset: warm apricot-rose cast. */
+private val SunsetLightScheme = lightColorScheme(
+    primary = Color(0xFFBF4A1F),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFBF4A1F).copy(alpha = 0.15f),
+    onPrimaryContainer = Color(0xFF8C3512),
+    background = Color(0xFFFCF7F4),
+    onBackground = Color(0xFF201915),
+    surface = Color(0xFFFCF7F4),
+    onSurface = Color(0xFF201915),
+    surfaceVariant = Color(0xFFF0E1D9),
+    onSurfaceVariant = Color(0xFF4D423B),
+    outline = Color(0xFF7F7269),
+    outlineVariant = Color(0xFFD3C2B7),
+    surfaceContainerLowest = Color(0xFFFFFDFA),
+    surfaceContainerLow = Color(0xFFF7F0EA),
+    surfaceContainer = Color(0xFFF1EAE4),
+    surfaceContainerHigh = Color(0xFFEBE4DD),
+    surfaceContainerHighest = Color(0xFFE5DED6),
+)
+
+private val SunsetDarkScheme = darkColorScheme(
+    primary = Color(0xFFFFB693),
+    onPrimary = Color(0xFF5B1F00),
+    primaryContainer = Color(0xFF7A3413),
+    onPrimaryContainer = Color(0xFFFFDBCB),
+    background = Color(0xFF18120E),
+    onBackground = Color(0xFFEEE2D9),
+    surface = Color(0xFF18120E),
+    onSurface = Color(0xFFEEE2D9),
+    surfaceVariant = Color(0xFF4D423B),
+    onSurfaceVariant = Color(0xFFD3C2B7),
+    outline = Color(0xFF9C8D82),
+    outlineVariant = Color(0xFF4D423B),
+    surfaceContainerLowest = Color(0xFF120C09),
+    surfaceContainerLow = Color(0xFF201813),
+    surfaceContainer = Color(0xFF241C17),
+    surfaceContainerHigh = Color(0xFF2F2621),
+    surfaceContainerHighest = Color(0xFF3A312B),
+)
+
+/** Sakura preset: soft pink cast. */
+private val SakuraLightScheme = lightColorScheme(
+    primary = Color(0xFFAC3E6B),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFAC3E6B).copy(alpha = 0.15f),
+    onPrimaryContainer = Color(0xFF82294F),
+    background = Color(0xFFFCF6F9),
+    onBackground = Color(0xFF20191C),
+    surface = Color(0xFFFCF6F9),
+    onSurface = Color(0xFF20191C),
+    surfaceVariant = Color(0xFFEFDFE6),
+    onSurfaceVariant = Color(0xFF4C4147),
+    outline = Color(0xFF7E7076),
+    outlineVariant = Color(0xFFD2C0C8),
+    surfaceContainerLowest = Color(0xFFFFFDFE),
+    surfaceContainerLow = Color(0xFFF6EEF2),
+    surfaceContainer = Color(0xFFF0E8EC),
+    surfaceContainerHigh = Color(0xFFEAE2E7),
+    surfaceContainerHighest = Color(0xFFE4DCE1),
+)
+
+private val SakuraDarkScheme = darkColorScheme(
+    primary = Color(0xFFFFB0CC),
+    onPrimary = Color(0xFF5E1133),
+    primaryContainer = Color(0xFF7D2950),
+    onPrimaryContainer = Color(0xFFFFD9E5),
+    background = Color(0xFF181114),
+    onBackground = Color(0xFFECDEE3),
+    surface = Color(0xFF181114),
+    onSurface = Color(0xFFECDEE3),
+    surfaceVariant = Color(0xFF4C4147),
+    onSurfaceVariant = Color(0xFFD2C0C8),
+    outline = Color(0xFF9B8A91),
+    outlineVariant = Color(0xFF4C4147),
+    surfaceContainerLowest = Color(0xFF120C0F),
+    surfaceContainerLow = Color(0xFF1F181B),
+    surfaceContainer = Color(0xFF231C1F),
+    surfaceContainerHigh = Color(0xFF2E2629),
+    surfaceContainerHighest = Color(0xFF393035),
+)
+
 /** Applies the accent color on top of a preset scheme (dynamic color off). */
 private fun ColorScheme.withAccent(accentArgb: Int): ColorScheme {
     val accent = Color(accentArgb)
@@ -272,6 +436,10 @@ private fun schemeFor(preset: ThemePreset, dark: Boolean): ColorScheme = when (p
     ThemePreset.AMOLED -> if (dark) AmoledDarkScheme else LightScheme
     ThemePreset.GRAPHITE -> if (dark) GraphiteDarkScheme else GraphiteLightScheme
     ThemePreset.WARM_SAND -> if (dark) WarmSandDarkScheme else WarmSandLightScheme
+    ThemePreset.OCEAN -> if (dark) OceanDarkScheme else OceanLightScheme
+    ThemePreset.FOREST -> if (dark) ForestDarkScheme else ForestLightScheme
+    ThemePreset.SUNSET -> if (dark) SunsetDarkScheme else SunsetLightScheme
+    ThemePreset.SAKURA -> if (dark) SakuraDarkScheme else SakuraLightScheme
 }
 
 private val AntiRecallTypographyDefault = Typography(

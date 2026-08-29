@@ -29,13 +29,13 @@ import kkkzheli.antirecall.wechat.util.PermissionUtil
  * restart and surfaces which granted permissions are actually keeping the
  * daemon running (notification listener / accessibility / battery exemption).
  * The notification carries the captured-message count (refreshed on IO) and
- * an elapsed-time chronometer, plus the brand accent color and icon.
+ * an elapsed-time chronometer, with the app mark on a transparent background
+ * as its icon (no tinted backdrop).
  */
 class KeepAliveService : Service() {
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val WATCHDOG_MS = 30_000L
-        private const val BRAND_GREEN = 0xFF07C160.toInt()
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -104,8 +104,7 @@ class KeepAliveService : Service() {
         val builder = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_ID_KEEP_ALIVE)
             .setContentTitle(getString(R.string.keep_alive_title))
             .setContentText(contentText())
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setColor(BRAND_GREEN)
+            .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)

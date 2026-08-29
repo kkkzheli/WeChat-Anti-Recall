@@ -12,7 +12,7 @@ enum class ThemeMode { SYSTEM, DARK, LIGHT }
  * Color-palette family. Each preset supplies a light and a dark ColorScheme;
  * [AMOLED] additionally goes pure black in dark mode for OLED panels.
  */
-enum class ThemePreset { BRAND, AMOLED, GRAPHITE, WARM_SAND }
+enum class ThemePreset { BRAND, AMOLED, GRAPHITE, WARM_SAND, OCEAN, FOREST, SUNSET, SAKURA }
 
 /** Spacing of the message list. */
 enum class ListDensity(val rowSpacingDp: Int, val cardPaddingVerticalDp: Int) {
