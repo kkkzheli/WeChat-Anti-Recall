@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification small icon: monochrome (white) speech bubble with a clock. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Bubble with the clock face punched out (even-odd) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M12,2 C7.03,2 3,5.58 3,10.4 C3,15.22 7.03,18.8 12,18.8 C13.2,18.8 14.36,18.6 15.4,18.2 L16.6,21.4 L16.1,17.9 C19.1,16.5 21,13.7 21,10.4 C21,5.58 16.97,2 12,2Z M12,6.4 C9.57,6.4 7.6,8.37 7.6,10.8 C7.6,13.23 9.57,15.2 12,15.2 C14.43,15.2 16.4,13.23 16.4,10.8 C16.4,8.37 14.43,6.4 12,6.4Z" />
+    <!-- Clock hands -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M12,10.8 L9.6,7.8" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:pathData="M12,10.8 L14.6,8.4" />
+</vector>

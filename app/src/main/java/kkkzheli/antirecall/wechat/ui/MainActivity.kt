@@ -11,22 +11,30 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.collectAsState
 import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.service.KeepAliveService
@@ -35,7 +43,8 @@ import kkkzheli.antirecall.wechat.ui.compose.MainScreen
 import kkkzheli.antirecall.wechat.ui.compose.SearchScreen
 import kkkzheli.antirecall.wechat.ui.compose.SettingsScreen
 import kkkzheli.antirecall.wechat.ui.compose.filter.FilterScreen
-import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
+import kkkzheli.antirecall.wechat.ui.theme.AppearanceRepository
+import kkkzheli.antirecall.wechat.ui.theme.AppearanceSettings
 import kkkzheli.antirecall.wechat.ui.theme.WeChatAntiRecallTheme
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
 import android.widget.Toast
@@ -62,6 +71,11 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Branded splash; switches to Theme.AntiRecall once the first frame is
+        // ready. Must run before super.onCreate and needs the splash theme on
+        // the activity (see manifest + themes.xml).
+        installSplashScreen()
+
         // Full screen: content extends behind status bar, transparent color
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             window.statusBarColor = 0x00000000
@@ -83,53 +97,68 @@ class MainActivity : ComponentActivity() {
         })
 
         setContent {
-            val themePref by ThemePreference.readFlow().collectAsState(initial = ThemePreference.SYSTEM)
+            val settings by AppearanceRepository.flow.collectAsState(initial = AppearanceSettings.DEFAULT)
 
-            WeChatAntiRecallTheme(userPreferredTheme = themePref) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+            WeChatAntiRecallTheme(settings = settings) {
+                // In-app font scaling on top of the system setting.
+                val sysDensity = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(sysDensity.density, sysDensity.fontScale * settings.fontScale)
                 ) {
-                    val context = LocalContext.current
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        val lastCaptureTimeMs by viewModel.lastCaptureTime.collectAsStateWithLifecycle()
 
-                    val lastCaptureTimeMs by viewModel.lastCaptureTime.collectAsStateWithLifecycle()
-
-                    AnimatedContent(
-                        targetState = currentScreen,
-                        transitionSpec = {
-                            fadeIn(animationSpec = tween(350)) togetherWith
-                            fadeOut(animationSpec = tween(350))
-                        }
-                    ) { screen ->
-                        when (screen) {
-                            Screen.MAIN -> {
-                                MainScreen(
-                                    viewModel = viewModel,
-                                    onNavigateToSearch = { currentScreen = Screen.SEARCH },
-                                    onNavigateToFilter = { currentScreen = Screen.FILTER },
-                                    onNavigateToSettings = { currentScreen = Screen.SETTINGS },
-                                    onDeleteMessage = { msg ->
-                                        viewModel.deleteMessage(msg.id)
-                                        Toast.makeText(applicationContext, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
-                                    },
-                                    lastCaptureTimeMs = lastCaptureTimeMs,
-                                )
-                            }
-                            Screen.SEARCH -> {
-                                SearchScreen(viewModel = viewModel, onBack = { currentScreen = Screen.MAIN })
-                            }
-                            Screen.FILTER -> {
-                                FilterScreen(
-                                    viewModel = viewModel,
-                                    onBack = { currentScreen = Screen.MAIN },
-                                )
-                            }
-                            Screen.SETTINGS -> {
-                                SettingsScreen(
-                                    viewModel = viewModel,
-                                    onBack = { currentScreen = Screen.MAIN },
-                                    onClearConfirmed = { viewModel.clearAllMessages() },
-                                )
+                        // Directional transitions: deeper screens slide in from
+                        // the right, going back slides from the left.
+                        AnimatedContent(
+                            targetState = currentScreen,
+                            transitionSpec = {
+                                val forward = targetState != Screen.MAIN
+                                val spec = tween<IntOffset>(300, easing = FastOutSlowInEasing)
+                                if (forward) {
+                                    (slideInHorizontally(spec) { it / 4 } + fadeIn(tween(300))) togetherWith
+                                        (slideOutHorizontally(spec) { -it / 6 } + fadeOut(tween(200)))
+                                } else {
+                                    (slideInHorizontally(spec) { -it / 4 } + fadeIn(tween(300))) togetherWith
+                                        (slideOutHorizontally(spec) { it / 6 } + fadeOut(tween(200)))
+                                }
+                            },
+                            label = "screenTransition",
+                        ) { screen ->
+                            when (screen) {
+                                Screen.MAIN -> {
+                                    MainScreen(
+                                        viewModel = viewModel,
+                                        onNavigateToSearch = { currentScreen = Screen.SEARCH },
+                                        onNavigateToFilter = { currentScreen = Screen.FILTER },
+                                        onNavigateToSettings = { currentScreen = Screen.SETTINGS },
+                                        onDeleteMessage = { msg ->
+                                            viewModel.deleteMessage(msg.id)
+                                            Toast.makeText(applicationContext, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
+                                        },
+                                        lastCaptureTimeMs = lastCaptureTimeMs,
+                                        titleStyle = settings.titleStyle,
+                                    )
+                                }
+                                Screen.SEARCH -> {
+                                    SearchScreen(viewModel = viewModel, onBack = { currentScreen = Screen.MAIN })
+                                }
+                                Screen.FILTER -> {
+                                    FilterScreen(
+                                        viewModel = viewModel,
+                                        onBack = { currentScreen = Screen.MAIN },
+                                    )
+                                }
+                                Screen.SETTINGS -> {
+                                    SettingsScreen(
+                                        viewModel = viewModel,
+                                        onBack = { currentScreen = Screen.MAIN },
+                                        onClearConfirmed = { viewModel.clearAllMessages() },
+                                    )
+                                }
                             }
                         }
                     }

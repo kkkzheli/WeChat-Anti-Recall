@@ -1,5 +1,7 @@
 package kkkzheli.antirecall.wechat.viewmodel
 
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -7,11 +9,17 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kkkzheli.antirecall.wechat.App
+import kkkzheli.antirecall.wechat.model.DisplayItem
 import kkkzheli.antirecall.wechat.model.Message
 import kkkzheli.antirecall.wechat.repository.MessageRepository
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 class MainViewModel(
     private val repository: MessageRepository
@@ -20,6 +28,22 @@ class MainViewModel(
     private val _allMessages = MutableLiveData<List<Message>>(emptyList())
     private val _messages = MutableLiveData<List<Message>>()
     val messages: LiveData<List<Message>> = _messages
+
+    /** Main-screen rows: date headers, unread divider, message cards. */
+    private val _displayItems = MutableLiveData<List<DisplayItem>>(emptyList())
+    val displayItems: LiveData<List<DisplayItem>> = _displayItems
+
+    /** Unread (filtered) message count under the current last-seen marker. */
+    private val _unreadCount = MutableLiveData(0)
+    val unreadCount: LiveData<Int> = _unreadCount
+
+    /**
+     * Set once the entrance burst has played for this process. Lives on the
+     * ViewModel (which outlives screen switches) so coming back from
+     * Settings/Search does not replay it.
+     */
+    @Volatile
+    var entranceBurstPlayed = false
 
     private val _searchQuery = MutableStateFlow("")
 
@@ -63,22 +87,45 @@ class MainViewModel(
     val lastCaptureTime: StateFlow<Long?> = _lastCaptureTime
 
     // Compiled once at class level — reused by every stripBracketPrefix call.
-    // Declared above init: loadMessages() starts collectors that call
+    // Declared above init: the pipeline starts collectors that call
     // stripBracketPrefix, so the regex must exist before any of them runs.
     private val BRACKET_PREFIX = Regex("^\\[[^\\]]+\\]\\s*")
 
-    init {
-        loadMessages()
+    /** Timestamp of the newest message the user has laid eyes on ("unread" line). */
+    private val lastSeenFlow = App.dataStore.data.map { it[KEY_LAST_SEEN] ?: 0L }
+
+    /** Everything the list pipeline needs besides the messages themselves. */
+    private data class Filters(
+        val query: String,
+        val contacts: Set<String>,
+        val groups: Set<String>,
+        val start: LocalDate?,
+        val end: LocalDate?,
+    )
+
+    private val filterFlow = combine(
+        _searchQuery, _selectedContacts, _selectedGroups, _startDate, _endDate
+    ) { query, contacts, groups, start, end ->
+        Filters(query, contacts, groups, start, end)
     }
 
-    private fun loadMessages() {
+    init {
+        // Whole list pipeline — filtering, date grouping, unread divider and
+        // same-sender run detection — runs upstream on the Default dispatcher;
+        // the collect block only posts the finished values on Main.
         viewModelScope.launch {
-            repository.getAllMessages().flowOn(Dispatchers.Default).collect { list ->
-                _allMessages.value = list
-                if (list.isNotEmpty()) {
-                    _lastCaptureTime.value = list.firstOrNull()?.timestamp
+            combine(repository.getAllMessages(), lastSeenFlow, filterFlow) { all, lastSeen, f ->
+                computeDisplay(all, lastSeen, f)
+            }.flowOn(Dispatchers.Default).collect { r ->
+                _allMessages.value = r.filtered
+                _displayItems.value = r.display
+                _filteredMessages.value = r.filtered
+                _messages.value = r.filtered
+                _messageCount.value = r.filtered.size
+                _unreadCount.value = r.unreadCount
+                if (r.newestTs != null) {
+                    _lastCaptureTime.value = r.newestTs
                 }
-                recomputeVisible()
             }
         }
 
@@ -95,6 +142,113 @@ class MainViewModel(
         }
     }
 
+    /** Everything the main list UI needs, computed off the main thread. */
+    data class DisplayResult(
+        val display: List<DisplayItem>,
+        val filtered: List<Message>,
+        val newestTs: Long?,
+        val unreadCount: Int,
+    )
+
+    /**
+     * Pure, off-main computation: filter → build display rows. Returns the
+     * display list, the filtered message list, the newest message's timestamp
+     * (from the UNfiltered list — the running banner must not follow the
+     * active search/filter), and how many filtered messages are unread.
+     */
+    private fun computeDisplay(
+        all: List<Message>,
+        lastSeen: Long,
+        f: Filters,
+    ): DisplayResult {
+        val zone = ZoneId.systemDefault()
+        val query = f.query.lowercase()
+
+        val filtered = all.filter { message ->
+            if (query.isNotEmpty()) {
+                val hit = message.content.lowercase().contains(query) ||
+                    message.senderName.lowercase().contains(query) ||
+                    message.chatName.lowercase().contains(query)
+                if (!hit) return@filter false
+            }
+            // Filter comparison uses cleaned names on both sides; the ||
+            // short-circuits so no filter means no regex work.
+            val contactMatch = f.contacts.isEmpty() || f.contacts.contains(stripBracketPrefix(message.senderName))
+            val groupMatch = f.groups.isEmpty() || f.groups.contains(stripBracketPrefix(message.chatName))
+            if (!contactMatch || !groupMatch) return@filter false
+
+            if (f.start != null || f.end != null) {
+                try {
+                    val msgDate = Instant.ofEpochMilli(message.timestamp).atZone(zone).toLocalDate()
+                    if (f.start != null && msgDate.isBefore(f.start)) return@filter false
+                    if (f.end != null && msgDate.isAfter(f.end)) return@filter false
+                } catch (_: Exception) {
+                    return@filter false
+                }
+            }
+            true
+        }
+
+        val display = ArrayList<DisplayItem>(filtered.size + 8)
+        var currentDay = Long.MIN_VALUE
+        var runKey: String? = null
+        var runTs = 0L
+        var seenUnread = false
+        var dividerPlaced = false
+        for (m in filtered) {
+            val day = try {
+                Instant.ofEpochMilli(m.timestamp).atZone(zone).toLocalDate().toEpochDay()
+            } catch (_: Exception) {
+                Long.MIN_VALUE
+            }
+
+            if (day != currentDay) {
+                display.add(DisplayItem.DateHeader(day))
+                currentDay = day
+                runKey = null // a new day always starts a fresh sender run
+            }
+            // The unread divider sits BETWEEN the unseen block (above, newer)
+            // and the first already-seen message (below, older) — placed
+            // lazily, once, when the boundary is actually crossed. When the
+            // whole list is unseen there is no boundary to draw, so no divider.
+            if (!dividerPlaced && lastSeen > 0 && m.timestamp <= lastSeen) {
+                if (seenUnread) {
+                    display.add(DisplayItem.UnreadDivider)
+                    dividerPlaced = true
+                }
+            } else if (lastSeen > 0 && m.timestamp > lastSeen) {
+                seenUnread = true
+            }
+
+            val key = m.senderName + "|" + m.chatName
+            // List is timestamp-DESC: runTs is the previous (newer) neighbor,
+            // so the gap must be runTs - m.timestamp.
+            val compact = key == runKey && (runTs - m.timestamp) <= 5 * 60_000L
+            display.add(DisplayItem.MessageItem(m, compact))
+            runKey = key
+            runTs = m.timestamp
+        }
+
+        val newest = all.firstOrNull()?.timestamp
+        val unread = if (lastSeen > 0) filtered.count { it.timestamp > lastSeen } else 0
+        return DisplayResult(display, filtered, newest, unread)
+    }
+
+    /**
+     * Record that the user has seen everything up to [newestTimestamp] —
+     * collapses the unread divider on the next emission. Monotonic: an older
+     * timestamp never rewinds the marker.
+     */
+    fun markAllSeen(newestTimestamp: Long) {
+        if (newestTimestamp <= 0) return
+        viewModelScope.launch {
+            App.dataStore.edit { prefs ->
+                val current = prefs[KEY_LAST_SEEN] ?: 0L
+                if (newestTimestamp > current) prefs[KEY_LAST_SEEN] = newestTimestamp
+            }
+        }
+    }
+
     /** Strip any [...] prefix, e.g. [3], [3条], [3条消息]. */
     private fun stripBracketPrefix(name: String): String {
         return name.replace(BRACKET_PREFIX, "").trim()
@@ -102,7 +256,6 @@ class MainViewModel(
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query.trim()
-        recomputeVisible()
     }
 
     fun clearAllMessages() {
@@ -110,6 +263,8 @@ class MainViewModel(
             repository.clearAllMessages()
             _allMessages.value = emptyList()
             _messages.value = emptyList()
+            _displayItems.value = emptyList()
+            _filteredMessages.value = emptyList()
             _messageCount.value = 0
             _contactNames.value = emptyList()
             _groupNames.value = emptyList()
@@ -141,7 +296,6 @@ class MainViewModel(
             current.add(contact)
         }
         _selectedContacts.value = current
-        recomputeVisible()
     }
 
     fun toggleGroup(group: String) {
@@ -153,7 +307,6 @@ class MainViewModel(
             current.add(group)
         }
         _selectedGroups.value = current
-        recomputeVisible()
     }
 
     fun clearFilter() {
@@ -162,7 +315,6 @@ class MainViewModel(
         _startDate.value = null
         _endDate.value = null
         _showDatePicker.value = false
-        recomputeVisible()
     }
 
     /**
@@ -171,7 +323,6 @@ class MainViewModel(
     fun setDateRange(start: LocalDate?, end: LocalDate?) {
         _startDate.value = start
         _endDate.value = end
-        recomputeVisible()
     }
 
     /**
@@ -180,55 +331,13 @@ class MainViewModel(
     fun clearDateRange() {
         _startDate.value = null
         _endDate.value = null
-        recomputeVisible()
     }
 
     fun showDatePicker(show: Boolean) {
         _showDatePicker.value = show
     }
 
-    private fun recomputeVisible() {
-        val all = _allMessages.value.orEmpty()
-        val contacts = _selectedContacts.value
-        val groups = _selectedGroups.value
-        val startDT = _startDate.value
-        val endDT = _endDate.value
-        val query = _searchQuery.value.lowercase()
-
-        val filtered = all.filter { message ->
-            // Search query — case-insensitive substring across content/sender/chat
-            if (query.isNotEmpty()) {
-                val hit = message.content.lowercase().contains(query) ||
-                    message.senderName.lowercase().contains(query) ||
-                    message.chatName.lowercase().contains(query)
-                if (!hit) return@filter false
-            }
-            // Contact filter — compare cleaned names on both sides (|| short-circuits, so no filter = no regex work)
-            val contactMatch = contacts.isEmpty() || contacts.contains(stripBracketPrefix(message.senderName))
-            // Group filter — compare cleaned names on both sides
-            val groupMatch = groups.isEmpty() || groups.contains(stripBracketPrefix(message.chatName))
-            if (!contactMatch || !groupMatch) return@filter false
-
-            // Date range filter — compare local dates using device timezone
-            if (startDT != null || endDT != null) {
-                try {
-                    val msgDate = java.time.Instant.ofEpochMilli(message.timestamp)
-                        .atZone(java.time.ZoneId.systemDefault())
-                        .toLocalDate()
-                    if (startDT != null && msgDate.isBefore(startDT)) return@filter false
-                    if (endDT != null && msgDate.isAfter(endDT)) return@filter false
-                } catch (_: Exception) {
-                    return@filter false
-                }
-            }
-
-            true
-        }
-        _filteredMessages.value = filtered
-        _messages.value = filtered
-        _messageCount.value = filtered.size
-    }
-
+    fun getDisplayItems(): List<DisplayItem> = _displayItems.value.orEmpty()
     fun getMessages(): List<Message> = _messages.value.orEmpty()
     fun getContactNames(): List<String> = _contactNames.value
     fun getGroupNames(): List<String> = _groupNames.value
@@ -237,5 +346,7 @@ class MainViewModel(
         const val GITHUB_REPO = "https://github.com/kkkzheli/WeChat-Anti-Recall"
         const val AUTHOR_NAME = "kkkzheli"
         const val APP_NAME = "Anti Recall"
+
+        private val KEY_LAST_SEEN = longPreferencesKey("pref_last_seen_ts")
     }
 }

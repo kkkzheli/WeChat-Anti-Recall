@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark twin of Theme.AntiRecall: avoids a white window flash before the
+         first Compose frame when the in-app theme is dark. -->
+    <style name="Theme.AntiRecall" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/wechat_green</item>
+        <item name="android:colorPrimaryDark">@color/wechat_dark_green</item>
+        <item name="android:windowBackground">#FF131311</item>
+    </style>
+</resources>

@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Edge-to-edge: no statusBarColor, no windowLightStatusBar — the Compose
+         theme flips the status-bar icon appearance to match the in-app theme. -->
     <style name="Theme.AntiRecall" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimary">@color/wechat_green</item>
         <item name="android:colorPrimaryDark">@color/wechat_dark_green</item>
-        <item name="android:statusBarColor">@color/wechat_green</item>
-        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- Branded splash: WeChat green backdrop with the white bubble-clock mark.
+         installSplashScreen() swaps to Theme.AntiRecall on the first frame. -->
+    <style name="Theme.AntiRecall.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/wechat_green</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.AntiRecall</item>
     </style>
 </resources>

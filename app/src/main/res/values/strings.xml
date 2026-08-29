@@ -34,6 +34,7 @@
     <string name="permission_needs_open_settings">去设置</string>
     <string name="keep_alive_title">Anti Recall 守护中</string>
     <string name="keep_alive_content">消息持续保护中</string>
+    <string name="keep_alive_count">已捕获 %d 条消息，持续保护中</string>
 
     <!-- Extracted from SearchScreen -->
     <string name="search_title">搜索消息</string>
@@ -41,6 +42,7 @@
     <string name="search_active_filter">当前筛选: %s</string>
     <string name="search_enter_keyword">请输入关键词开始搜索</string>
     <string name="search_no_results">未找到匹配的消息</string>
+    <string name="search_result_count">%d 条结果</string>
     <string name="search_filter_dialog_title">选择筛选条件</string>
     <string name="filter_option_all">全部</string>
     <string name="filter_option_all_desc">显示所有消息</string>
@@ -144,4 +146,50 @@
         <item>五</item>
         <item>六</item>
     </string-array>
+
+    <!-- v1.6 beautification: list furniture -->
+    <string name="new_messages_count">%d 条新消息</string>
+    <string name="day_today">今天</string>
+    <string name="day_yesterday">昨天</string>
+
+    <!-- Message type glyphs (content descriptions) -->
+    <string name="msg_type_voice">语音消息</string>
+    <string name="msg_type_image">图片消息</string>
+    <string name="msg_type_video">视频消息</string>
+    <string name="msg_type_file">文件消息</string>
+    <string name="msg_type_link">链接消息</string>
+    <string name="msg_type_location">位置消息</string>
+    <string name="msg_type_other">其他类型消息</string>
+
+    <!-- Appearance settings: colors -->
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_colors_title">颜色与主题</string>
+    <string name="settings_dynamic_color">动态取色</string>
+    <string name="settings_dynamic_color_desc">跟随系统壁纸配色（Android 12+）</string>
+    <string name="settings_dynamic_color_unsupported">需要 Android 12 及以上</string>
+    <string name="settings_theme_preset">主题预设</string>
+    <string name="preset_brand">品牌绿</string>
+    <string name="preset_amoled">纯黑 AMOLED</string>
+    <string name="preset_graphite">石墨灰</string>
+    <string name="preset_warm_sand">暖沙</string>
+    <string name="settings_accent_color">强调色</string>
+
+    <!-- Appearance settings: title style -->
+    <string name="settings_title_style">标题样式</string>
+    <string name="title_style_gradient">流光渐变</string>
+    <string name="title_style_accent">强调色</string>
+    <string name="title_style_static">纯色</string>
+
+    <!-- Appearance settings: layout -->
+    <string name="settings_layout_title">布局</string>
+    <string name="settings_bubble_radius">气泡圆角</string>
+    <string name="settings_list_density">列表密度</string>
+    <string name="density_compact">紧凑</string>
+    <string name="density_standard">标准</string>
+    <string name="density_relaxed">宽松</string>
+    <string name="settings_font_scale">字体大小</string>
+    <string name="font_scale_percent">%d%%</string>
+    <string name="settings_special_palette">特殊消息配色</string>
+    <string name="palette_vivid">鲜艳（日间友好）</string>
+    <string name="palette_soft">柔和（夜间友好）</string>
 </resources>

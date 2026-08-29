@@ -1,13 +1,15 @@
 package kkkzheli.antirecall.wechat.ui.compose
 
 import android.content.Context
-import android.content.res.Configuration
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,25 +17,27 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Accessible
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -43,13 +47,21 @@ import kkkzheli.antirecall.wechat.App
 import kkkzheli.antirecall.wechat.R
 import kkkzheli.antirecall.wechat.service.NotificationCaptureService
 import kkkzheli.antirecall.wechat.ui.compose.github.GitHubOctocat
-import kkkzheli.antirecall.wechat.ui.theme.ThemePreference
+import kkkzheli.antirecall.wechat.ui.theme.AccentColor
+import kkkzheli.antirecall.wechat.ui.theme.AppearanceRepository
+import kkkzheli.antirecall.wechat.ui.theme.AppearanceSettings
+import kkkzheli.antirecall.wechat.ui.theme.ListDensity
+import kkkzheli.antirecall.wechat.ui.theme.SpecialPalette
+import kkkzheli.antirecall.wechat.ui.theme.ThemeMode
+import kkkzheli.antirecall.wechat.ui.theme.ThemePreset
+import kkkzheli.antirecall.wechat.ui.theme.TitleStyle
 import kkkzheli.antirecall.wechat.util.AccessibilityUtil
 import kkkzheli.antirecall.wechat.util.AutoStartUtil
 import kkkzheli.antirecall.wechat.util.PermissionUtil
 import kkkzheli.antirecall.wechat.viewmodel.MainViewModel
+import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
@@ -59,7 +71,10 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var showClearDialog by remember { mutableStateOf(false) }
-    val themePref by ThemePreference.readFlow().collectAsState(initial = ThemePreference.SYSTEM)
+    val settings by AppearanceRepository.flow.collectAsStateWithLifecycle(
+        initialValue = AppearanceSettings.DEFAULT
+    )
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -76,14 +91,220 @@ fun SettingsScreen(
         Column(
             modifier = modifier.fillMaxSize().padding(paddingValues).verticalScroll(rememberScrollState()).padding(16.dp),
         ) {
-            // Theme section
+            // --------------------------------------------------------------
+            // Appearance
+            // --------------------------------------------------------------
+            SectionHeader(stringResource(R.string.settings_section_appearance))
+
+            // Colors & theme
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = stringResource(R.string.settings_theme_mode), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 12.dp))
-                    val scope = rememberCoroutineScope()
-                    ThemePickerRow(themePref) { newPref ->
-                        scope.launch { ThemePreference.write(newPref) }
+                    Text(
+                        text = stringResource(R.string.settings_colors_title),
+                        fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+
+                    // Dark / light / system
+                    val modeOptions = listOf(
+                        ThemeMode.SYSTEM to stringResource(R.string.theme_follow_system),
+                        ThemeMode.DARK to stringResource(R.string.theme_dark),
+                        ThemeMode.LIGHT to stringResource(R.string.theme_light),
+                    )
+                    SelectorChips(
+                        options = modeOptions,
+                        selected = settings.themeMode,
+                        onSelect = { mode ->
+                            scope.launch { AppearanceRepository.write { it.copy(themeMode = mode) } }
+                        },
+                        leadingIcon = { mode ->
+                            when (mode) {
+                                ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
+                                ThemeMode.DARK -> Icons.Default.DarkMode
+                                ThemeMode.LIGHT -> Icons.Default.LightMode
+                            }
+                        },
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Dynamic color (Android 12+)
+                    val dynamicSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.settings_dynamic_color), fontSize = 14.sp)
+                            Text(
+                                text = stringResource(
+                                    if (dynamicSupported) R.string.settings_dynamic_color_desc
+                                    else R.string.settings_dynamic_color_unsupported
+                                ),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = settings.dynamicColor && dynamicSupported,
+                            enabled = dynamicSupported,
+                            onCheckedChange = { on ->
+                                scope.launch { AppearanceRepository.write { it.copy(dynamicColor = on) } }
+                            },
+                        )
                     }
+
+                    // Presets & accent only matter when dynamic color is off.
+                    if (!settings.dynamicColor || !dynamicSupported) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.settings_theme_preset),
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
+                        SelectorChips(
+                            options = listOf(
+                                ThemePreset.BRAND to stringResource(R.string.preset_brand),
+                                ThemePreset.AMOLED to stringResource(R.string.preset_amoled),
+                                ThemePreset.GRAPHITE to stringResource(R.string.preset_graphite),
+                                ThemePreset.WARM_SAND to stringResource(R.string.preset_warm_sand),
+                            ),
+                            selected = settings.preset,
+                            onSelect = { p ->
+                                scope.launch { AppearanceRepository.write { it.copy(preset = p) } }
+                            },
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.settings_accent_color),
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
+                        AccentSwatchRow(
+                            selectedArgb = settings.accentColorArgb,
+                            onSelect = { c ->
+                                scope.launch { AppearanceRepository.write { it.copy(accentColorArgb = c.argb) } }
+                            },
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Title style
+                    Text(
+                        text = stringResource(R.string.settings_title_style),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                    SelectorChips(
+                        options = listOf(
+                            TitleStyle.GRADIENT to stringResource(R.string.title_style_gradient),
+                            TitleStyle.ACCENT to stringResource(R.string.title_style_accent),
+                            TitleStyle.STATIC to stringResource(R.string.title_style_static),
+                        ),
+                        selected = settings.titleStyle,
+                        onSelect = { s ->
+                            scope.launch { AppearanceRepository.write { it.copy(titleStyle = s) } }
+                        },
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Layout
+            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_layout_title),
+                        fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+
+                    // Bubble radius
+                    Text(
+                        text = stringResource(R.string.settings_bubble_radius),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    var radiusLocal by remember(settings.bubbleRadiusDp) {
+                        mutableFloatStateOf(settings.bubbleRadiusDp.toFloat())
+                    }
+                    Slider(
+                        value = radiusLocal,
+                        onValueChange = { radiusLocal = it },
+                        valueRange = 0f..28f,
+                        onValueChangeFinished = {
+                            scope.launch {
+                                AppearanceRepository.write { it.copy(bubbleRadiusDp = radiusLocal.roundToInt()) }
+                            }
+                        },
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // List density
+                    Text(
+                        text = stringResource(R.string.settings_list_density),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                    SelectorChips(
+                        options = listOf(
+                            ListDensity.COMPACT to stringResource(R.string.density_compact),
+                            ListDensity.STANDARD to stringResource(R.string.density_standard),
+                            ListDensity.RELAXED to stringResource(R.string.density_relaxed),
+                        ),
+                        selected = settings.density,
+                        onSelect = { d ->
+                            scope.launch { AppearanceRepository.write { it.copy(density = d) } }
+                        },
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Font scale
+                    Text(
+                        text = stringResource(R.string.settings_font_scale),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    var fontLocal by remember(settings.fontScale) {
+                        mutableFloatStateOf(settings.fontScale)
+                    }
+                    Slider(
+                        value = fontLocal,
+                        onValueChange = { fontLocal = it },
+                        valueRange = 0.85f..1.30f,
+                        onValueChangeFinished = {
+                            scope.launch {
+                                AppearanceRepository.write {
+                                    it.copy(fontScale = (fontLocal * 20).roundToInt() / 20f)
+                                }
+                            }
+                        },
+                    )
+                    Text(
+                        text = stringResource(R.string.font_scale_percent, (fontLocal * 100).roundToInt()),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.End),
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Special message palette
+                    Text(
+                        text = stringResource(R.string.settings_special_palette),
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                    SelectorChips(
+                        options = listOf(
+                            SpecialPalette.VIVID to stringResource(R.string.palette_vivid),
+                            SpecialPalette.SOFT to stringResource(R.string.palette_soft),
+                        ),
+                        selected = settings.specialPalette,
+                        onSelect = { p ->
+                            scope.launch { AppearanceRepository.write { it.copy(specialPalette = p) } }
+                        },
+                    )
                 }
             }
 
@@ -109,46 +330,62 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Author section
+            // About: avatar with a gradient ring + version pill
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = stringResource(R.string.settings_author), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val isDark = LocalContext.current.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-                        val bgColor = if (isDark) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
-                        val fgColor = if (isDark) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer
-                        Surface(shape = RoundedCornerShape(50), color = bgColor, modifier = Modifier.size(48.dp)) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(text = MainViewModel.AUTHOR_NAME.take(1).uppercase(), fontWeight = FontWeight.Bold, color = fgColor, fontSize = 20.sp)
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(text = MainViewModel.AUTHOR_NAME, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                            Text(text = stringResource(R.string.settings_about_project), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                Column(
+                    modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val ringBrush = Brush.sweepGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.tertiary,
+                            MaterialTheme.colorScheme.primary,
+                        )
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(ringBrush)
+                            .padding(3.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = MainViewModel.AUTHOR_NAME.take(1).uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 26.sp,
+                        )
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Version section - reads from BuildConfig
-            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(text = stringResource(R.string.settings_basic_info), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            val pkgInfo = try { context.packageManager.getPackageInfo(context.packageName, 0) } catch (_: Exception) { null }
-                            val vName = pkgInfo?.versionName ?: "?"
-                            val vCode = pkgInfo?.versionCode?.toString() ?: "?"
-                            Text(text = stringResource(R.string.settings_version_info, vName, vCode), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(text = MainViewModel.AUTHOR_NAME, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text(
+                        text = stringResource(R.string.settings_about_project),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val pkgInfo = try { context.packageManager.getPackageInfo(context.packageName, 0) } catch (_: Exception) { null }
+                    val vName = pkgInfo?.versionName ?: "?"
+                    val vCode = pkgInfo?.versionCode?.toString() ?: "?"
+                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer) {
+                        Text(
+                            text = stringResource(R.string.settings_version_info, vName, vCode),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = stringResource(R.string.settings_about_tech), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    Text(
+                        text = stringResource(R.string.settings_about_tech),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    )
                 }
             }
 
@@ -171,7 +408,7 @@ fun SettingsScreen(
                         },
                     )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     BatteryOptimizationRow(context)
 
@@ -220,38 +457,73 @@ fun SettingsScreen(
     }
 }
 
-@Composable
-private fun ThemePickerRow(current: ThemePreference, onSelected: (ThemePreference) -> Unit) {
-    val scope = rememberCoroutineScope()
-    val options = listOf(
-        ThemePreference.SYSTEM to stringResource(R.string.theme_follow_system),
-        ThemePreference.DARK to stringResource(R.string.theme_dark),
-        ThemePreference.LIGHT to stringResource(R.string.theme_light),
-    )
+// ---------------------------------------------------------------------------
+// Appearance building blocks
+// ---------------------------------------------------------------------------
 
-    Column {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            options.forEachIndexed { _, (pref, label) ->
-                OutlinedButton(
-                    onClick = { scope.launch { ThemePreference.write(pref) } },
-                    modifier = Modifier.weight(1f).padding(horizontal = 3.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (pref == current) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                    ),
-                ) {
-                    when (pref) {
-                        ThemePreference.SYSTEM -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(14.dp))
-                        ThemePreference.DARK -> Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(14.dp))
-                        ThemePreference.LIGHT -> Icon(Icons.Default.LightMode, contentDescription = null, modifier = Modifier.size(14.dp))
-                    }
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(label, fontSize = 10.sp, maxLines = 1)
-                }
-            }
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+    )
+}
+
+/** Generic chip selector; optional icon provider for the leading icon. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T> SelectorChips(
+    options: List<Pair<T, String>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: ((T) -> androidx.compose.ui.graphics.vector.ImageVector)? = null,
+) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        options.forEach { (value, label) ->
+            FilterChip(
+                selected = value == selected,
+                onClick = { onSelect(value) },
+                label = { Text(label) },
+                leadingIcon = leadingIcon?.let { f -> { Icon(f(value), contentDescription = null, modifier = Modifier.size(16.dp)) } },
+            )
         }
     }
 }
+
+@Composable
+private fun AccentSwatchRow(selectedArgb: Int, onSelect: (AccentColor) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+        AccentColor.entries.forEach { c ->
+            val color = Color(c.argb)
+            val isSelected = c.argb == selectedArgb
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .border(
+                        width = if (isSelected) 3.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        shape = CircleShape,
+                    )
+                    .padding(4.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .clickable { onSelect(c) },
+            )
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Permission rows (unchanged behaviour)
+// ---------------------------------------------------------------------------
 
 @Composable
 private fun BatteryOptimizationRow(context: Context) {

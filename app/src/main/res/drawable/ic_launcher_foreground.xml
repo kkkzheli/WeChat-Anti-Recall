@@ -4,27 +4,27 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Speech bubble shape -->
+    <!-- Speech bubble shape (white — reads on the green adaptive-icon background) -->
     <path
-        android:fillColor="#07C160"
+        android:fillColor="#FFFFFF"
         android:pathData="M54,12 C32,12 14,28 14,50 C14,72 32,88 54,88 C60,88 66,87 71,84 L76,96 L76,96 L74,96 L74,84 C82,78 90,66 90,50 C90,28 72,12 54,12Z" />
     <!-- Clock face -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#07C160"
         android:pathData="M54,28 C46,28 39,33 36,40 L36,68 C39,75 46,80 54,80 C62,80 69,75 72,68 L72,40 C69,33 62,28 54,28Z" />
     <!-- Clock center dot -->
     <path
-        android:fillColor="#07C160"
+        android:fillColor="#FFFFFF"
         android:pathData="M54,54 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
     <!-- Hour hand pointing to 10 -->
     <path
-        android:strokeColor="#07C160"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2.5"
         android:strokeLineCap="round"
         android:pathData="M54,54 L48,44" />
     <!-- Minute hand pointing to 2 -->
     <path
-        android:strokeColor="#07C160"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
         android:pathData="M54,54 L62,46" />

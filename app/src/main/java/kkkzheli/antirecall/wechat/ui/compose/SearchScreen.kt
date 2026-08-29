@@ -3,6 +3,7 @@ package kkkzheli.antirecall.wechat.ui.compose
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,16 +49,15 @@ fun SearchScreen(
         }
     }
 
-    // Observe messages from LiveData
-    var allMessages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    val queryKey = localQuery.hashCode()
-
-    LaunchedEffect(viewModel.messages.value, queryKey) {
+    // Observe messages from LiveData (observer removed on dispose — the old
+    // LaunchedEffect-based version leaked a fresh observer on every query change)
+    var allMessages by remember { mutableStateOf(viewModel.getMessages()) }
+    DisposableEffect(Unit) {
         val observer = Observer<List<Message>> { list ->
             allMessages = list ?: emptyList()
         }
         viewModel.messages.observeForever(observer)
-        return@LaunchedEffect
+        onDispose { viewModel.messages.removeObserver(observer) }
     }
 
     Scaffold(
@@ -85,7 +86,9 @@ fun SearchScreen(
         Column(
             modifier = modifier.fillMaxSize().padding(paddingValues),
         ) {
-            OutlinedTextField(
+            // Filled tonal search field: sits quiet on the background instead
+            // of drawing an outline box around itself.
+            TextField(
                 value = localQuery,
                 onValueChange = { localQuery = it },
                 placeholder = { Text(stringResource(R.string.search_hint)) },
@@ -98,8 +101,14 @@ fun SearchScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                shape = MaterialTheme.shapes.medium,
+                shape = RoundedCornerShape(16.dp),
                 singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                ),
             )
 
             if (selectedFilter != null) {
@@ -136,12 +145,29 @@ fun SearchScreen(
                     }
                 }
             } else {
+                // Result count
+                Text(
+                    text = stringResource(R.string.search_result_count, filteredResults.size),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    items(filteredResults, key = { it.id }) { message ->
+                    items(
+                        filteredResults,
+                        key = { it.id },
+                        contentType = { msg ->
+                            when {
+                                msg.isSpecial -> "special"
+                                msg.chatName.isNotEmpty() -> "group"
+                                else -> "personal"
+                            }
+                        },
+                    ) { message ->
                         MessageCard(message = message)
                     }
                 }
