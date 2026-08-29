@@ -26,15 +26,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -263,14 +260,9 @@ private val TitleGradientColors = listOf(
 )
 
 /**
- * Seamless looping gradient title, animated entirely in the draw phase. The text
- * is painted [Color.Transparent] and the gradient is drawn over it inside
- * [Modifier.drawWithCache], where [phase] is read within the draw scope — so each
- * animation tick only invalidates drawing, never recomposition, and the captured
- * [TextLayoutResult] is cached instead of being rebuilt every frame. The gradient
- * period equals the title width and the color sequence starts and ends on the
- * same color, so when phase wraps from 1 back to 0 the pattern is identical —
- * no visible jump.
+ * Seamless looping gradient title. The gradient period equals the title width and
+ * the color sequence starts and ends on the same color, so when [phase] wraps from
+ * 1 back to 0 the pattern is identical — no visible jump.
  */
 @Composable
 private fun GradientTitle() {
@@ -281,30 +273,21 @@ private fun GradientTitle() {
         animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
         label = "phase",
     )
-    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var titleWidth by remember { mutableStateOf(0f) }
+    val period = titleWidth.coerceAtLeast(1f)
+    val brush = Brush.linearGradient(
+        colors = TitleGradientColors,
+        start = Offset(phase * period, 0f),
+        end = Offset(phase * period + period, 0f),
+        tileMode = TileMode.Repeated,
+    )
     Text(
         text = stringResource(R.string.app_name),
         style = MaterialTheme.typography.titleLarge.copy(
             fontWeight = FontWeight.ExtraBold,
-            color = Color.Transparent,
+            brush = brush,
         ),
-        onTextLayout = { result -> layout = result },
-        modifier = Modifier.drawWithCache {
-            val result = layout ?: return@drawWithCache onDrawBehind { }
-            val period = result.size.width.toFloat().coerceAtLeast(1f)
-            onDrawWithContent {
-                drawContent()
-                drawText(
-                    result,
-                    brush = Brush.linearGradient(
-                        TitleGradientColors,
-                        start = Offset(phase * period, 0f),
-                        end = Offset(phase * period + period, 0f),
-                        tileMode = TileMode.Repeated,
-                    ),
-                )
-            }
-        },
+        onTextLayout = { result -> titleWidth = result.size.width.toFloat() },
     )
 }
 
