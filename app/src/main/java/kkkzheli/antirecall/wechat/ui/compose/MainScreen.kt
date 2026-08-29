@@ -116,24 +116,31 @@ fun MainScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    // Entrance burst: one shared Animatable, played exactly once per process —
-    // the flag lives on the ViewModel, so coming back from Settings/Search
-    // starts settled at 1f (no replay, no blank flash) instead of re-animating.
-    // withTimeoutOrNull guards against OEM frame-pipeline stalls: animateTo
-    // advances on the frame clock, and when the display pipeline wedges the
-    // Choreographer can go quiet for seconds — the tween would hang at 0f and
-    // every card would stay invisible. The timeout runs on delay(), i.e. the
-    // main Looper, so it always fires and snaps everything visible; the list
-    // appears on the next frame that does get produced.
-    val entrance = remember { Animatable(if (viewModel.entranceBurstPlayed) 1f else 0f) }
+    // Entrance burst, fail-safe by construction: the Animatable starts at 1f —
+    // the resting state of the world is VISIBLE — and the burst only plays
+    // inside a scope whose finally snaps back to 1f. MIUI reliably found a way
+    // to strand the previous "starts at 0, must be lifted" design (flag set,
+    // tween cancelled before its first frame, never re-run): rows stayed
+    // composed but at alpha 0 — swipe still worked, nothing was on screen —
+    // until a screen switch re-created the remember at 1f. Starting visible
+    // makes that state unreachable: whatever kills the animation (frame-clock
+    // stall, effect teardown, process weirdness) degrades to "no animation",
+    // never to a blank list.
+    val entrance = remember { Animatable(1f) }
     LaunchedEffect(displayItems.isNotEmpty()) {
-        if (displayItems.isEmpty() || viewModel.entranceBurstPlayed) return@LaunchedEffect
-        viewModel.entranceBurstPlayed = true
-        val finished = withTimeoutOrNull(ENTRANCE_MS * 4L) {
-            entrance.animateTo(1f, tween(ENTRANCE_MS, easing = LinearEasing))
-            true
+        if (displayItems.isEmpty() || viewModel.entranceBurstPlayed) {
+            entrance.snapTo(1f)
+            return@LaunchedEffect
         }
-        if (finished == null) entrance.snapTo(1f)
+        viewModel.entranceBurstPlayed = true
+        try {
+            entrance.snapTo(0f)
+            withTimeoutOrNull(ENTRANCE_MS * 4L) {
+                entrance.animateTo(1f, tween(ENTRANCE_MS, easing = LinearEasing))
+            }
+        } finally {
+            entrance.snapTo(1f)
+        }
     }
 
     // Newest message (the list is timestamp-DESC; index 0 may be its date header).

@@ -72,7 +72,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // No splash screen: the window background shows through until the first
         // Compose frame, then the message list rains in from the top.
-
         // Full screen: content extends behind status bar, transparent color
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             window.statusBarColor = 0x00000000

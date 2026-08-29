@@ -20,6 +20,11 @@ app-debug.apk
 local.properties
 *.orig
 
+# Signing credentials never enter git (releases sign with the local debug
+# keystore, which stays out of the repo)
+*.keystore
+*.jks
+
 # OS
 .DS_Store
 Thumbs.db

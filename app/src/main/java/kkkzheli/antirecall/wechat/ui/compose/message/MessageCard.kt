@@ -91,12 +91,15 @@ fun MessageCard(
     // Delete animation, part 1: confirming the swipe only arms the removal.
     // Deleting straight from confirmValueChange would pop the row out of the
     // list in a single frame; instead the box below springs the row fully
-    // off-screen first.
+    // off-screen first. Rows without a delete action (search results) refuse
+    // the commit outright — a committed dismissal with no callback would park
+    // the strip on-screen forever, because the settled-off state disables
+    // further drag gestures.
     var pendingDelete by remember { mutableStateOf(false) }
     var rowWidthPx by remember { mutableStateOf(0f) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value != SwipeToDismissBoxValue.Settled) {
+            if (onDelete != null && value != SwipeToDismissBoxValue.Settled) {
                 pendingDelete = true
                 true
             } else {
@@ -109,14 +112,23 @@ fun MessageCard(
     // Delete animation, part 2: wait until the fly-out has carried the row
     // ~90% off-screen (bounded by a 600ms grace so a stalled frame pipeline
     // can never wedge the removal), then drop the data — animateItem() on the
-    // list rows glides the neighbours shut to finish the effect.
+    // list rows glides the neighbours shut to finish the effect. The width is
+    // measured AFTER the horizontal padding, i.e. the library's own anchor
+    // distance: measured outside it, 90% would lie past the furthest
+    // reachable offset in narrow split-screen windows and stall every delete
+    // until the grace runs out. finally re-fires the delete if the row leaves
+    // composition mid-grace (navigation, rotation, flung out of the viewport)
+    // — without it, the message the user watched fly away would reappear.
     LaunchedEffect(pendingDelete) {
         if (!pendingDelete) return@LaunchedEffect
-        withTimeoutOrNull(600L) {
-            snapshotFlow { runCatching { dismissState.requireOffset() }.getOrDefault(0f) }
-                .first { kotlin.math.abs(it) >= rowWidthPx * 0.9f }
+        try {
+            withTimeoutOrNull(600L) {
+                snapshotFlow { runCatching { dismissState.requireOffset() }.getOrDefault(0f) }
+                    .first { kotlin.math.abs(it) >= rowWidthPx * 0.9f }
+            }
+        } finally {
+            onDelete?.invoke(message)
         }
-        onDelete?.invoke(message)
     }
 
     // Haptic tick the moment the drag crosses the commit threshold and again
@@ -169,8 +181,11 @@ fun MessageCard(
         },
         modifier = modifier
             .fillMaxWidth()
-            .onSizeChanged { rowWidthPx = it.width.toFloat() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            // Below the padding: this must equal the dismiss anchors' distance
+            // (the library measures its content under this chain), or the
+            // delete threshold can be unreachable in narrow windows.
+            .onSizeChanged { rowWidthPx = it.width.toFloat() },
     ) {
         val isMoney = message.specialType == SpecialType.RED_PACKET || message.specialType == SpecialType.TRANSFER
         val container = resolveContainerColor(message, special)
